@@ -74,11 +74,14 @@ def create_app(bot: Any | None = None) -> FastAPI:
     @app.get("/api/health")
     async def health():
         dist = frontend_dist()
+        bot = app.state.bot
+        bot_ready = bool(bot and getattr(bot, "is_ready", False))
         return {
             "ok": True,
             "panel_login_configured": settings.panel_login_configured,
             "guild_id": str(settings.guild_id) if settings.guild_id else None,
-            "bot_attached": app.state.bot is not None,
+            "bot_attached": bot is not None,
+            "bot_ready": bot_ready,
             "frontend_bundled": dist is not None,
         }
 

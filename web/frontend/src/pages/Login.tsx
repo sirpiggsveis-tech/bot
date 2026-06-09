@@ -34,7 +34,7 @@ export default function Login() {
           Sign in to manage the order of battle and bot configuration.
         </p>
         <p className="mt-1 text-center text-xs text-panel-muted">
-          First visit may take up to a minute while the free server wakes up.
+          Free hosting sleeps when idle — sign-in may take 30–60s the first time.
         </p>
 
         <form onSubmit={onSubmit} className="mt-6 space-y-4 text-left">

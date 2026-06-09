@@ -1,5 +1,12 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { api, clearAuthToken, LoginResponse, Me, setAuthToken } from "./api";
+import {
+  api,
+  clearAuthToken,
+  getAuthToken,
+  LoginResponse,
+  Me,
+  setAuthToken,
+} from "./api";
 
 interface AuthState {
   user: Me | null;
@@ -52,6 +59,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
+    // Show the login form immediately — don't wait for Render to wake up.
+    if (!getAuthToken()) {
+      setLoading(false);
+      return;
+    }
     refresh();
   }, []);
 
