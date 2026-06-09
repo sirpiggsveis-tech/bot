@@ -1,0 +1,62 @@
+24/7 hosting — you do NOT need your PC on
+============================================
+
+WHAT YOU WANT
+  Discord bot online 24/7  +  web panel  +  no PC running
+
+RECOMMENDED: Render Starter (same repo you already use)
+-------------------------------------------------------
+Cost: about $7/month for the orbat-bot service.
+
+1. Render Dashboard -> orbat-bot -> Settings -> Instance Type -> Starter
+   (or redeploy from render.yaml in this repo — it now uses Starter + run.py)
+
+2. Environment — you MUST have ALL of these:
+     DISCORD_TOKEN
+     GUILD_ID
+     DATABASE_URL
+     SESSION_SECRET
+     PANEL_ADMIN_PASSWORD
+     FRONTEND_ORIGIN   (your Cloudflare Pages URL)
+
+3. Manual Deploy -> Deploy latest commit
+
+4. Logs should show:
+     Connecting Discord bot…
+     Control panel API listening
+
+5. Test:
+     https://orbat-bot.onrender.com/api/health
+     -> bot_attached: true, bot_ready: true (after ~30s)
+
+6. Discord: bot should show ONLINE in your server.
+
+One Render service runs BOTH the bot and the panel API (run.py).
+Your PC can stay off.
+
+FREE ALTERNATIVE (no $7/mo): Oracle Cloud Always Free VM
+--------------------------------------------------------
+1. Create free ARM VM at https://www.oracle.com/cloud/free/
+2. SSH in, install Python 3.11, git clone your repo
+3. Copy .env (DISCORD_TOKEN, DATABASE_URL, etc.)
+4. pip install -r requirements.txt
+5. Run 24/7:  python run.py   (or use systemd — see below)
+
+systemd example (on the VM):
+  sudo nano /etc/systemd/system/orbat-bot.service
+  [Service]
+  WorkingDirectory=/home/ubuntu/bot
+  ExecStart=/usr/bin/python3 run.py
+  Restart=always
+  EnvironmentFile=/home/ubuntu/bot/.env
+
+  sudo systemctl enable --now orbat-bot
+
+Keep Render FREE for panel API only, bot on Oracle — panel actions (say, PD)
+will NOT work unless bot and API share a process OR you use only one host.
+Simplest: pay Render Starter OR run everything on the VM (panel + bot on Oracle).
+
+DO NOT USE (for 24/7 bot)
+-------------------------
+  - Render FREE tier alone (service sleeps; bot goes offline)
+  - start-bot.bat on your PC (only while PC is on)

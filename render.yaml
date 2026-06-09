@@ -1,19 +1,25 @@
-# Render blueprint: lightweight panel API (Discord bot runs on your PC).
+# Render blueprint: Discord bot + panel API together, 24/7 (no PC required).
+#
+# IMPORTANT: The Discord bot needs a plan that does NOT sleep.
+#   - Starter ($7/mo): always on — recommended
+#   - Free: panel API only (bot will NOT stay online) — use HOSTING_24_7.txt for free VM options
+#
 # Docs: https://render.com/docs/blueprint-spec
 services:
   - type: web
     name: orbat-bot
     runtime: python
-    plan: free # sleeps when idle; wakes on first visit (~30-60s)
-    buildCommand: pip install -r requirements-panel.txt
-    startCommand: python run_panel.py
+    plan: starter # always on — required for 24/7 Discord bot
+    buildCommand: pip install -r requirements.txt
+    startCommand: python run.py
     healthCheckPath: /ping
     autoDeploy: true
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.9"
-      # Set all of these as secrets in the Render dashboard (do not commit them):
       - key: DATABASE_URL
+        sync: false
+      - key: DISCORD_TOKEN
         sync: false
       - key: GUILD_ID
         sync: false
@@ -26,9 +32,6 @@ services:
       - key: FRONTEND_ORIGIN
         sync: false
       - key: POST_LOGIN_REDIRECT
-        sync: false
-      # Optional (OAuth / legacy — password login does not need these):
-      - key: DISCORD_TOKEN
         sync: false
       - key: DISCORD_CLIENT_ID
         sync: false

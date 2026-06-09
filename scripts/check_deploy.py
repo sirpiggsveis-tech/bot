@@ -21,6 +21,11 @@ REQUIRED = (
     "PANEL_ADMIN_PASSWORD",
 )
 
+RENDER_BOT_NOTE = (
+    "Render 24/7: use Starter plan + startCommand python run.py + DISCORD_TOKEN set. "
+    "Free tier = panel only, bot sleeps."
+)
+
 RENDER_URL = os.getenv("RENDER_SERVICE_URL", "https://orbat-bot.onrender.com").rstrip("/")
 PAGES_URL = os.getenv("PAGES_URL", "").rstrip("/") or "(set after Cloudflare Pages deploy)"
 
@@ -57,6 +62,8 @@ def main() -> int:
     print()
     print("Cloudflare Pages build env:")
     print(f"  VITE_API_BASE = {RENDER_URL}")
+    print()
+    print(RENDER_BOT_NOTE)
     print()
     return 1 if missing else 0
 

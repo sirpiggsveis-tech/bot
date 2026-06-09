@@ -1,0 +1,28 @@
+# Optional: panel API only on FREE tier (bot offline, config/ORBAT editing only).
+# Rename to render.yaml only if you accept no 24/7 Discord bot on Render.
+services:
+  - type: web
+    name: orbat-bot
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements-panel.txt
+    startCommand: python run_panel.py
+    healthCheckPath: /ping
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: DATABASE_URL
+        sync: false
+      - key: GUILD_ID
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: PANEL_ADMIN_USERNAME
+        sync: false
+      - key: PANEL_ADMIN_PASSWORD
+        sync: false
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: POST_LOGIN_REDIRECT
+        sync: false

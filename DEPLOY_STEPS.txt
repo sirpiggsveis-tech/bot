@@ -1,71 +1,44 @@
-ORBAT Bot — deploy (only the clicks YOU must do)
-================================================
-
-Your PC is ready. Double-click setup-deploy.bat to open all websites.
-
-STEP 1 — Render (panel API only) ~10 min
-----------------------------------------
-The Discord bot runs on YOUR PC (start.bat). Render only hosts the web panel API.
-
-1. Go to https://dashboard.render.com and sign in with GitHub
-2. Open service "orbat-bot" (or New -> Blueprint -> sirpiggsveis-tech/bot)
-3. Keep Plan on FREE (sleeps when idle; wakes when an admin opens the panel)
-4. Environment tab — required keys:
-     DATABASE_URL, SESSION_SECRET, PANEL_ADMIN_PASSWORD, GUILD_ID, FRONTEND_ORIGIN
-   Optional keep-alive: run scripts/keep_alive.py every 14 min (Task Scheduler / UptimeRobot)
-5. Manual Deploy -> Deploy latest commit
-6. Wait until Live. Test: https://orbat-bot.onrender.com/ping  (should show: ok)
-   First visit after idle may take 30-90 seconds.
-
-STEP 2 — Cloudflare Pages (the nice website) ~10 min
-----------------------------------------------------
-1. https://dash.cloudflare.com -> Workers & Pages -> Create -> Pages -> Connect Git
-2. Repo: sirpiggsveis-tech/bot
-3. Build settings:
-     Root directory:     web/frontend
-     Build command:      npm run build
-     Output directory:   dist
-4. Do NOT set VITE_API_BASE on Cloudflare (leave empty). The UI calls Render directly.
-5. Deploy. Copy your URL (e.g. https://orbat-panel.pages.dev)
-6. Add to local .env:  PAGES_URL=https://YOUR-URL.pages.dev
-
-STEP 3 — Discord OAuth redirect ~2 min
----------------------------------------
-Discord Developer Portal -> your app -> OAuth2 -> Redirects -> Add BOTH:
-  https://YOUR-URL.pages.dev/api/auth/callback
-  https://orbat-bot.onrender.com/api/auth/callback
-
-STEP 4 — Link Render to your website URL ~2 min
-------------------------------------------------
-Run: python scripts/copy_render_env.py  (after PAGES_URL is in .env)
-Update Render Environment from render-env-paste.txt, especially:
-  OAUTH_REDIRECT_URI    = https://YOUR-URL.pages.dev/api/auth/callback
-  FRONTEND_ORIGIN       = https://YOUR-URL.pages.dev
-  POST_LOGIN_REDIRECT   = https://YOUR-URL.pages.dev
-  SESSION_COOKIE_SAMESITE = lax
-Then Manual Deploy again.
-Push latest code first so Cloudflare gets the /api proxy in _redirects.
-
-STEP 5 — Test
--------------
-1. Open your Cloudflare Pages URL
-2. Login with Discord
-3. Dashboard should show member/unit counts
-
-24/7 DISCORD BOT + PANEL (how it fits together)
-------------------------------------------------
-  Discord bot  ----->  Supabase DB  <-----  Panel API (Render)  <-----  Panel UI (Cloudflare)
-  (start-bot.bat)         (shared)              (orbat-bot.onrender.com)      (your .pages.dev URL)
-
-  The bot and panel do NOT need to run on the same machine. They share ORBAT data via Supabase.
-
-  Bot 24/7 options:
-    A) Your PC always on — run start-bot.bat (or Task Scheduler on login)
-    B) Free cloud VM — Oracle Cloud Always Free: install Python, clone repo, run scriptt.py
-    C) Cheap VPS (~$5/mo) — same as B
-
-  Panel API on Render free tier sleeps when idle. Optional: UptimeRobot pings
-  https://orbat-bot.onrender.com/ping every 10 min (free).
-
-KEEP the Discord bot running (start-bot.bat). Render only serves the panel API.
-Do NOT run run.py on Render — it is too heavy for the free tier.
+ORBAT Bot — deploy (24/7 server, no PC required)
+=================================================
+
+Architecture:
+  Cloudflare Pages (UI)  ->  Render Starter (bot + API)  ->  Supabase
+
+STEP 1 — Render (bot + panel API, 24/7) ~15 min
+------------------------------------------------
+1. https://dashboard.render.com -> service "orbat-bot"
+2. Settings -> Instance Type -> **Starter** (~$7/mo, always on)
+   (Free tier cannot keep the Discord bot online 24/7.)
+3. Settings -> Build & Deploy:
+     Build:  pip install -r requirements.txt
+     Start:  python run.py
+     Health: /ping
+4. Environment — required:
+     DISCORD_TOKEN
+     GUILD_ID
+     DATABASE_URL
+     SESSION_SECRET
+     PANEL_ADMIN_PASSWORD
+     FRONTEND_ORIGIN       (your Cloudflare Pages URL, after step 2)
+     POST_LOGIN_REDIRECT   (same)
+5. Manual Deploy -> latest commit
+6. Test: https://orbat-bot.onrender.com/api/health
+     bot_ready: true  |  panel_login_configured: true
+7. Discord: bot should be online in your server.
+
+See HOSTING_24_7.txt for a free VM option if you cannot use Render Starter.
+
+STEP 2 — Cloudflare Pages (panel UI) ~10 min
+----------------------------------------------
+1. dash.cloudflare.com -> Pages -> Connect Git -> sirpiggsveis-tech/bot
+2. Root: web/frontend | Build: npm run build | Output: dist
+3. Do NOT set VITE_API_BASE (leave empty)
+4. Copy your URL -> add FRONTEND_ORIGIN on Render -> redeploy Render
+
+STEP 3 — Test
+-------------
+1. Open Cloudflare Pages URL -> sign in
+2. Sidebar: Messaging, PD mode, Squads, ORBAT, All commands
+3. Bot actions work when /api/health shows bot_ready: true
+
+Your PC does NOT need to run start-bot.bat if Render Starter is live.

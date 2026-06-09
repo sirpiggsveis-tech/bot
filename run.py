@@ -64,6 +64,7 @@ async def _serve_uvicorn(app) -> None:
     port = int(os.getenv("PORT", "8000"))
     dist = frontend_dist()
     print("\n--- Control panel API listening ---", flush=True)
+    print(f"  http://0.0.0.0:{port}/ping", flush=True)
     print(f"  http://0.0.0.0:{port}/api/health", flush=True)
     if dist is not None:
         print(f"  Panel UI: http://localhost:{port}/", flush=True)

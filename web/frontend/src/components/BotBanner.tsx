@@ -12,9 +12,10 @@ export default function BotBanner() {
 
   return (
     <div className="mb-4 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-200">
-      Discord bot is offline — config saves to the database, but{" "}
-      <strong>PD on/off, say, squads, and sync</strong> need{" "}
-      <code className="text-amber-100">start-bot.bat</code> running on your PC.
+      Discord bot is offline on the server. Config/ORBAT edits still save, but{" "}
+      <strong>say, PD on/off, squads, and sync</strong> need the bot running on{" "}
+      <strong>Render Starter</strong> (<code className="text-amber-100">run.py</code>
+      , not free tier). See HOSTING_24_7.txt in the repo.
     </div>
   );
 }
