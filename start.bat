@@ -33,7 +33,7 @@ if not exist "web\frontend\dist\index.html" (
   )
 )
 
-echo Starting bot + API...
+echo Starting bot + panel API together (local)...
 python run.py
 goto :end
 
