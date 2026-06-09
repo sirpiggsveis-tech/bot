@@ -1,31 +1,21 @@
-# Render blueprint: one web service running the Discord bot + control-panel API.
+# Render blueprint: lightweight panel API (Discord bot runs on your PC).
 # Docs: https://render.com/docs/blueprint-spec
 services:
   - type: web
     name: orbat-bot
     runtime: python
-    plan: free # sleeps when idle; fine for admin panel (wakes on first visit)
+    plan: free # sleeps when idle; wakes on first visit (~30-60s)
     buildCommand: pip install -r requirements-panel.txt
     startCommand: python run_panel.py
-    healthCheckPath: /api/health
+    healthCheckPath: /ping
     autoDeploy: true
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.9"
-      - key: NODE_VERSION
-        value: "20"
       # Set all of these as secrets in the Render dashboard (do not commit them):
       - key: DATABASE_URL
         sync: false
-      - key: DISCORD_TOKEN
-        sync: false
       - key: GUILD_ID
-        sync: false
-      - key: DISCORD_CLIENT_ID
-        sync: false
-      - key: DISCORD_CLIENT_SECRET
-        sync: false
-      - key: OAUTH_REDIRECT_URI
         sync: false
       - key: SESSION_SECRET
         sync: false
@@ -34,4 +24,15 @@ services:
       - key: PANEL_ADMIN_PASSWORD
         sync: false
       - key: FRONTEND_ORIGIN
+        sync: false
+      - key: POST_LOGIN_REDIRECT
+        sync: false
+      # Optional (OAuth / legacy — password login does not need these):
+      - key: DISCORD_TOKEN
+        sync: false
+      - key: DISCORD_CLIENT_ID
+        sync: false
+      - key: DISCORD_CLIENT_SECRET
+        sync: false
+      - key: OAUTH_REDIRECT_URI
         sync: false

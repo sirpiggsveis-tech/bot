@@ -8,6 +8,8 @@ from __future__ import annotations
 import os
 import sys
 
+print("run_panel: booting…", flush=True)
+
 from dotenv import load_dotenv
 
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
@@ -39,15 +41,16 @@ def main() -> None:
 
     _warn_missing_env()
     port = int(os.getenv("PORT", "8000"))
+    print(f"run_panel: binding 0.0.0.0:{port} (ping=/ping health=/api/health)", flush=True)
     app = create_app(bot=None)
-
-    @app.on_event("startup")
-    async def _on_startup() -> None:
-        _warn_missing_env()
-        print(f"Panel API ready on port {port}", flush=True)
-
-    print(f"Starting panel API on 0.0.0.0:{port} …", flush=True)
-    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info", access_log=False)
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=port,
+        log_level="info",
+        access_log=False,
+        timeout_keep_alive=5,
+    )
 
 
 if __name__ == "__main__":

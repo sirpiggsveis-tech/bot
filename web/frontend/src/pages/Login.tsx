@@ -2,16 +2,33 @@ import { FormEvent, useState } from "react";
 import { API_BASE, ApiError } from "../api";
 import { useAuth } from "../auth";
 
-async function wakeServer(): Promise<boolean> {
-  const deadline = Date.now() + 90_000;
+async function wakeServer(onStatus: (msg: string) => void): Promise<boolean> {
+  const deadline = Date.now() + 120_000;
+  let attempt = 0;
   while (Date.now() < deadline) {
+    attempt += 1;
+    const elapsed = Math.round((Date.now() - (deadline - 120_000)) / 1000);
+    onStatus(
+      attempt === 1
+        ? "Waking server (free tier sleeps when idle)…"
+        : `Still waking server… ${elapsed}s`
+    );
     try {
-      const r = await fetch(`${API_BASE}/api/health`, { cache: "no-store" });
-      if (r.ok) return true;
+      const ctrl = new AbortController();
+      const timer = window.setTimeout(() => ctrl.abort(), 25_000);
+      const r = await fetch(`${API_BASE}/ping`, {
+        cache: "no-store",
+        signal: ctrl.signal,
+      });
+      window.clearTimeout(timer);
+      if (r.ok) {
+        const text = (await r.text()).trim();
+        if (text === "ok") return true;
+      }
     } catch {
-      /* retry */
+      /* cold start — retry */
     }
-    await new Promise((r) => setTimeout(r, 3000));
+    await new Promise((r) => setTimeout(r, 2000));
   }
   return false;
 }
@@ -30,11 +47,11 @@ export default function Login() {
     setError(null);
     setStatus("Connecting to server…");
     try {
-      const up = await wakeServer();
+      const up = await wakeServer(setStatus);
       if (!up) {
         throw new ApiError(
           0,
-          "Server did not respond in 90s. On free Render it may be down — try start-panel.bat on your PC and open http://localhost:8000/"
+          "Server did not respond in 2 minutes. In Render dashboard: open orbat-bot → Logs (crash loop?) → Manual Deploy. Or run start-panel.bat locally at http://localhost:8000/"
         );
       }
       setStatus("Signing in…");

@@ -3,17 +3,19 @@ ORBAT Bot — deploy (only the clicks YOU must do)
 
 Your PC is ready. Double-click setup-deploy.bat to open all websites.
 
-STEP 1 — Render (bot + API) ~10 min
-------------------------------------
+STEP 1 — Render (panel API only) ~10 min
+----------------------------------------
+The Discord bot runs on YOUR PC (start.bat). Render only hosts the web panel API.
+
 1. Go to https://dashboard.render.com and sign in with GitHub
 2. Open service "orbat-bot" (or New -> Blueprint -> sirpiggsveis-tech/bot)
 3. Keep Plan on FREE (sleeps when idle; wakes when an admin opens the panel)
-4. Environment tab:
-   - Open render-env-paste.txt in your project folder
-   - Add each KEY=value line into Render (Add Environment Variable)
+4. Environment tab — required keys:
+     DATABASE_URL, SESSION_SECRET, PANEL_ADMIN_PASSWORD, GUILD_ID, FRONTEND_ORIGIN
+   Optional keep-alive: run scripts/keep_alive.py every 14 min (Task Scheduler / UptimeRobot)
 5. Manual Deploy -> Deploy latest commit
-6. Wait until Live. Test: https://bot-wf8x.onrender.com/api/health  (should show ok:true)
-   First visit after idle may take 30-60 seconds.
+6. Wait until Live. Test: https://bot-wf8x.onrender.com/ping  (should show: ok)
+   First visit after idle may take 30-90 seconds.
 
 STEP 2 — Cloudflare Pages (the nice website) ~10 min
 ----------------------------------------------------
@@ -50,4 +52,5 @@ STEP 5 — Test
 2. Login with Discord
 3. Dashboard should show member/unit counts
 
-STOP running the bot on your PC once Render is live (two copies conflict).
+KEEP the Discord bot running on your PC (start.bat). Render only serves the panel API.
+Do NOT run run.py on Render — it is too heavy for the free tier.

@@ -30,7 +30,7 @@ export class ApiError extends Error {
   }
 }
 
-const REQUEST_TIMEOUT_MS = 45_000;
+const REQUEST_TIMEOUT_MS = 60_000;
 
 function authHeaders(extra?: HeadersInit): HeadersInit {
   const headers: Record<string, string> = {

@@ -113,12 +113,12 @@ def _get_pool() -> ConnectionPool:
             if _pool is None:
                 _pool = ConnectionPool(
                     conninfo=_database_url(),
-                    min_size=1,
-                    max_size=5,
+                    min_size=0,
+                    max_size=3,
                     timeout=10,
                     kwargs={"row_factory": dict_row},
                     name="orbat",
-                    open=True,
+                    open=False,
                 )
     return _pool
 

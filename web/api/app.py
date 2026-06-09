@@ -7,7 +7,7 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config import get_settings
@@ -71,16 +71,21 @@ def create_app(bot: Any | None = None) -> FastAPI:
         allow_headers=["*"],
     )
 
+    @app.get("/ping", include_in_schema=False)
+    async def ping():
+        """Ultra-light probe for Render health checks (no DB, no auth)."""
+        return PlainTextResponse("ok")
+
     @app.get("/api/health")
     async def health():
         dist = frontend_dist()
-        bot = app.state.bot
-        bot_ready = bool(bot and getattr(bot, "is_ready", False))
+        attached = app.state.bot
+        bot_ready = bool(attached and getattr(attached, "is_ready", False))
         return {
             "ok": True,
             "panel_login_configured": settings.panel_login_configured,
             "guild_id": str(settings.guild_id) if settings.guild_id else None,
-            "bot_attached": bot is not None,
+            "bot_attached": attached is not None,
             "bot_ready": bot_ready,
             "frontend_bundled": dist is not None,
         }

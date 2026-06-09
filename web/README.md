@@ -47,7 +47,7 @@ The panel uses the **same Discord application** as the bot.
    create a **Web Service** manually:
    - Build: `pip install -r requirements.txt`
    - Start: `python run.py`
-   - Health check path: `/api/health`
+   - Health check path: `/ping` (lightweight; `/api/health` for full status)
 3. Set environment variables (see `.env.example`):
    - `DATABASE_URL` (Supabase, from step above)
    - `DISCORD_TOKEN`, `GUILD_ID`

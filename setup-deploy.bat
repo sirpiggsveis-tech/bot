@@ -16,7 +16,7 @@ echo Full click-by-click guide: DEPLOY_STEPS.txt
 echo.
 
 set RENDER=https://dashboard.render.com/web/srv
-set RENDER_HEALTH=https://bot-wf8x.onrender.com/api/health
+set RENDER_HEALTH=https://bot-wf8x.onrender.com/ping
 set GITHUB=https://github.com/sirpiggsveis-tech/bot
 set DISCORD=https://discord.com/developers/applications
 set CLOUDFLARE=https://dash.cloudflare.com/?to=/:account/pages/new/provider/github
