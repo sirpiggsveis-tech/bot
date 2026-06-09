@@ -14,7 +14,7 @@ The Discord bot runs on YOUR PC (start.bat). Render only hosts the web panel API
      DATABASE_URL, SESSION_SECRET, PANEL_ADMIN_PASSWORD, GUILD_ID, FRONTEND_ORIGIN
    Optional keep-alive: run scripts/keep_alive.py every 14 min (Task Scheduler / UptimeRobot)
 5. Manual Deploy -> Deploy latest commit
-6. Wait until Live. Test: https://bot-wf8x.onrender.com/ping  (should show: ok)
+6. Wait until Live. Test: https://orbat-bot.onrender.com/ping  (should show: ok)
    First visit after idle may take 30-90 seconds.
 
 STEP 2 — Cloudflare Pages (the nice website) ~10 min
@@ -33,7 +33,7 @@ STEP 3 — Discord OAuth redirect ~2 min
 ---------------------------------------
 Discord Developer Portal -> your app -> OAuth2 -> Redirects -> Add BOTH:
   https://YOUR-URL.pages.dev/api/auth/callback
-  https://bot-wf8x.onrender.com/api/auth/callback
+  https://orbat-bot.onrender.com/api/auth/callback
 
 STEP 4 — Link Render to your website URL ~2 min
 ------------------------------------------------
@@ -52,5 +52,20 @@ STEP 5 — Test
 2. Login with Discord
 3. Dashboard should show member/unit counts
 
-KEEP the Discord bot running on your PC (start.bat). Render only serves the panel API.
+24/7 DISCORD BOT + PANEL (how it fits together)
+------------------------------------------------
+  Discord bot  ----->  Supabase DB  <-----  Panel API (Render)  <-----  Panel UI (Cloudflare)
+  (start-bot.bat)         (shared)              (orbat-bot.onrender.com)      (your .pages.dev URL)
+
+  The bot and panel do NOT need to run on the same machine. They share ORBAT data via Supabase.
+
+  Bot 24/7 options:
+    A) Your PC always on — run start-bot.bat (or Task Scheduler on login)
+    B) Free cloud VM — Oracle Cloud Always Free: install Python, clone repo, run scriptt.py
+    C) Cheap VPS (~$5/mo) — same as B
+
+  Panel API on Render free tier sleeps when idle. Optional: UptimeRobot pings
+  https://orbat-bot.onrender.com/ping every 10 min (free).
+
+KEEP the Discord bot running (start-bot.bat). Render only serves the panel API.
 Do NOT run run.py on Render — it is too heavy for the free tier.

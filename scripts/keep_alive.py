@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 
 load_dotenv(ROOT / ".env")
 
-URL = os.getenv("RENDER_SERVICE_URL", "https://bot-wf8x.onrender.com").rstrip("/") + "/ping"
+URL = os.getenv("RENDER_SERVICE_URL", "https://orbat-bot.onrender.com").rstrip("/") + "/ping"
 
 
 def main() -> int:

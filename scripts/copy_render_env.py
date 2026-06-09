@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 
 load_dotenv(ROOT / ".env")
 
-RENDER_URL = os.getenv("RENDER_SERVICE_URL", "https://bot-wf8x.onrender.com").rstrip("/")
+RENDER_URL = os.getenv("RENDER_SERVICE_URL", "https://orbat-bot.onrender.com").rstrip("/")
 PAGES_URL = os.getenv("PAGES_URL", "").strip()
 
 # Keys to copy into Render. Production URLs override local .env values.

@@ -21,7 +21,7 @@ REQUIRED = (
     "PANEL_ADMIN_PASSWORD",
 )
 
-RENDER_URL = os.getenv("RENDER_SERVICE_URL", "https://bot-wf8x.onrender.com").rstrip("/")
+RENDER_URL = os.getenv("RENDER_SERVICE_URL", "https://orbat-bot.onrender.com").rstrip("/")
 PAGES_URL = os.getenv("PAGES_URL", "").rstrip("/") or "(set after Cloudflare Pages deploy)"
 
 

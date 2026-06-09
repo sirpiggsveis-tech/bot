@@ -16,7 +16,7 @@ echo Full click-by-click guide: DEPLOY_STEPS.txt
 echo.
 
 set RENDER=https://dashboard.render.com/web/srv
-set RENDER_HEALTH=https://bot-wf8x.onrender.com/ping
+set RENDER_HEALTH=https://orbat-bot.onrender.com/ping
 set GITHUB=https://github.com/sirpiggsveis-tech/bot
 set DISCORD=https://discord.com/developers/applications
 set CLOUDFLARE=https://dash.cloudflare.com/?to=/:account/pages/new/provider/github
@@ -47,7 +47,7 @@ echo.
 echo YOUR 3 CLICKS (details in DEPLOY_STEPS.txt):
 echo   1. Render: sign in, open orbat-bot, paste render-env-paste.txt, keep Free plan
 echo   2. Cloudflare Pages: connect GitHub repo, build web/frontend
-echo   3. Discord: add OAuth redirect https://bot-wf8x.onrender.com/api/auth/callback
+echo   3. Discord: add OAuth redirect https://orbat-bot.onrender.com/api/auth/callback
 echo.
 notepad DEPLOY_STEPS.txt
 pause

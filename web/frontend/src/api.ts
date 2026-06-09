@@ -1,5 +1,5 @@
 const TOKEN_KEY = "orbat_panel_token";
-const DEFAULT_RENDER_API = "https://bot-wf8x.onrender.com";
+const DEFAULT_RENDER_API = "https://orbat-bot.onrender.com";
 
 function resolveApiBase(): string {
   const raw = import.meta.env.VITE_API_BASE as string | undefined;
