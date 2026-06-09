@@ -37,7 +37,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function login(username: string, password: string) {
     await api.post("/api/auth/login", { username, password });
-    await refresh();
+    setLoading(true);
+    try {
+      const me = await api.get<Me>("/api/auth/me");
+      setUser(me);
+    } catch (err) {
+      setUser(null);
+      if (err instanceof ApiError) {
+        throw new ApiError(
+          err.status,
+          err.status === 401
+            ? "Signed in but session was not saved. Try again or use the Render URL."
+            : err.message
+        );
+      }
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function logout() {

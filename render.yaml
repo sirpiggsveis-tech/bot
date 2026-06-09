@@ -4,14 +4,16 @@ services:
   - type: web
     name: orbat-bot
     runtime: python
-    plan: starter # keeps the bot online 24/7 (free tier sleeps when idle)
-    buildCommand: pip install -r requirements.txt
+    plan: free # sleeps when idle; fine for admin panel (wakes on first visit)
+    buildCommand: pip install -r requirements.txt && cd web/frontend && npm install && npm run build
     startCommand: python run.py
     healthCheckPath: /api/health
     autoDeploy: true
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.9"
+      - key: NODE_VERSION
+        value: "20"
       # Set all of these as secrets in the Render dashboard (do not commit them):
       - key: DATABASE_URL
         sync: false
@@ -27,19 +29,9 @@ services:
         sync: false
       - key: SESSION_SECRET
         sync: false
+      - key: PANEL_ADMIN_USERNAME
+        sync: false
+      - key: PANEL_ADMIN_PASSWORD
+        sync: false
       - key: FRONTEND_ORIGIN
-        sync: false
-      - key: POST_LOGIN_REDIRECT
-        sync: false
-      - key: SESSION_COOKIE_SAMESITE
-        value: none
-      - key: SESSION_COOKIE_SECURE
-        value: "1"
-      - key: PANEL_ADMIN_ROLE_IDS
-        sync: false
-      - key: PANEL_STAFF_ROLE_IDS
-        sync: false
-      - key: PANEL_VIEWER_ROLE_IDS
-        sync: false
-      - key: PANEL_ALLOW_USER_IDS
         sync: false
