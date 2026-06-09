@@ -6,6 +6,11 @@ import os
 from functools import lru_cache
 
 
+def _is_local_url(url: str) -> bool:
+    lowered = url.lower()
+    return "localhost" in lowered or "127.0.0.1" in lowered
+
+
 def _split_ids(raw: str) -> set[int]:
     ids: set[int] = set()
     for piece in raw.replace(";", ",").split(","):
@@ -37,9 +42,17 @@ class Settings:
         self.session_ttl = int(os.getenv("SESSION_TTL_SECONDS", str(60 * 60 * 24 * 7)))
         self.cookie_name = os.getenv("SESSION_COOKIE_NAME", "orbat_session")
         self.cookie_domain = os.getenv("SESSION_COOKIE_DOMAIN") or None
-        # Cross-site (Pages -> Render) cookies require SameSite=None; Secure.
-        self.cookie_secure = os.getenv("SESSION_COOKIE_SECURE", "1") != "0"
-        self.cookie_samesite = os.getenv("SESSION_COOKIE_SAMESITE", "none").lower()
+        self.local_port = int(os.getenv("PORT", "8000"))
+
+        local_dev = _is_local_url(self.redirect_uri) or _is_local_url(
+            os.getenv("FRONTEND_ORIGIN", "")
+        )
+        # Cross-site (Cloudflare Pages -> Render) cookies need SameSite=None; Secure.
+        # Local http://localhost needs lax + insecure cookies unless overridden.
+        cookie_secure_default = "0" if local_dev else "1"
+        cookie_samesite_default = "lax" if local_dev else "none"
+        self.cookie_secure = os.getenv("SESSION_COOKIE_SECURE", cookie_secure_default) != "0"
+        self.cookie_samesite = os.getenv("SESSION_COOKIE_SAMESITE", cookie_samesite_default).lower()
 
         self.guild_id = int(os.getenv("GUILD_ID", "0") or "0")
         self.frontend_origin = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")

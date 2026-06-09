@@ -1,0 +1,66 @@
+"""Write Render env vars from .env to a local paste file (never commit this file)."""
+
+from __future__ import annotations
+
+import os
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from dotenv import load_dotenv
+
+load_dotenv(ROOT / ".env")
+
+RENDER_URL = os.getenv("RENDER_SERVICE_URL", "https://bot-wf8x.onrender.com").rstrip("/")
+PAGES_URL = os.getenv("PAGES_URL", "").strip()
+
+# Keys to copy into Render. Production URLs override local .env values.
+KEYS = [
+    "DISCORD_TOKEN",
+    "GUILD_ID",
+    "DATABASE_URL",
+    "DISCORD_CLIENT_ID",
+    "DISCORD_CLIENT_SECRET",
+    "SESSION_SECRET",
+    "PANEL_ADMIN_ROLE_IDS",
+    "PANEL_STAFF_ROLE_IDS",
+    "PANEL_VIEWER_ROLE_IDS",
+    "PANEL_ALLOW_USER_IDS",
+]
+
+OUT = ROOT / "render-env-paste.txt"
+
+
+def main() -> int:
+    lines: list[str] = [
+        "Paste these into Render -> your service -> Environment",
+        "(Delete this file after pasting — it contains secrets)",
+        "",
+    ]
+
+    for key in KEYS:
+        val = os.getenv(key, "").strip()
+        if val:
+            lines.append(f"{key}={val}")
+
+    lines.append(f"OAUTH_REDIRECT_URI={RENDER_URL}/api/auth/callback")
+    if PAGES_URL.startswith("http"):
+        lines.append(f"FRONTEND_ORIGIN={PAGES_URL}")
+        lines.append(f"POST_LOGIN_REDIRECT={PAGES_URL}")
+    else:
+        lines.append("FRONTEND_ORIGIN=https://YOUR-PANEL.pages.dev")
+        lines.append("POST_LOGIN_REDIRECT=https://YOUR-PANEL.pages.dev")
+    lines.append("SESSION_COOKIE_SAMESITE=none")
+    lines.append("SESSION_COOKIE_SECURE=1")
+    lines.append("")
+
+    OUT.write_text("\n".join(lines), encoding="utf-8")
+    print(f"Wrote {OUT}")
+    print("Open it, copy each line into Render Environment, then delete the file.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

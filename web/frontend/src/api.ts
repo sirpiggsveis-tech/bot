@@ -1,7 +1,13 @@
-export const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined)?.replace(
-  /\/$/,
-  ""
-) || "http://localhost:8000";
+function resolveApiBase(): string {
+  const raw = import.meta.env.VITE_API_BASE as string | undefined;
+  if (raw !== undefined) return raw.replace(/\/$/, "");
+  // Vite dev server (port 5173) calls the API on 8000; a built bundle served
+  // from the same server uses relative /api/... paths.
+  if (import.meta.env.DEV) return "http://localhost:8000";
+  return "";
+}
+
+export const API_BASE = resolveApiBase();
 
 export class ApiError extends Error {
   status: number;

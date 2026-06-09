@@ -13,3 +13,6 @@ venv/
 # Frontend
 web/frontend/node_modules/
 web/frontend/dist/
+
+# Local deploy helper (contains secrets)
+render-env-paste.txt

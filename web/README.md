@@ -76,28 +76,41 @@ real Pages URL.
 
 ---
 
-## 5. Local development
+## 5. Local development (easiest way)
 
-Backend (from repo root):
+**Double-click `start.bat`** in the project folder (or run `python run.py` from a terminal).
 
-```bash
-pip install -r requirements.txt
-# put values in .env (see .env.example); you still need a DATABASE_URL
-# (a Supabase project works for local dev too). For local OAuth set
-#   OAUTH_REDIRECT_URI=http://localhost:8000/api/auth/callback
-#   FRONTEND_ORIGIN=http://localhost:5173
-#   SESSION_COOKIE_SECURE=0   (so cookies work over http)
-python run.py
-```
+That starts the Discord bot and the control panel together. Then open:
 
-Frontend:
+**http://localhost:8000/**
+
+The first time, `start.bat` builds the web UI for you (needs Node.js — it will offer to install if missing).
+
+### What you need in `.env` for local login
+
+Copy `.env.example` to `.env` and fill in at least:
+
+- `DISCORD_TOKEN`, `GUILD_ID`, `DATABASE_URL`
+- `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`
+- `SESSION_SECRET` (any long random string)
+- `PANEL_ADMIN_ROLE_IDS` — your Discord role ID (Developer Mode → right-click role → Copy ID)
+
+For local use, cookies are auto-configured when your redirect URL contains `localhost`.
+Add this redirect in the Discord Developer Portal → OAuth2 → Redirects:
+
+`http://localhost:8000/api/auth/callback`
+
+### Optional: separate frontend dev server
+
+If you are actively editing the React UI:
 
 ```bash
 cd web/frontend
 npm install
-echo "VITE_API_BASE=http://localhost:8000" > .env.local
-npm run dev   # http://localhost:5173
+npm run dev   # http://localhost:5173  (talks to API on :8000)
 ```
+
+Set `FRONTEND_ORIGIN=http://localhost:5173` in `.env` when using this mode.
 
 ---
 

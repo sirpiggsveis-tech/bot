@@ -14,18 +14,71 @@ from dotenv import load_dotenv
 # Load env before importing the bot so things like ORBAT_DB_PATH are honored.
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
+
+def _prepare_local_bundled_panel() -> None:
+    """When the built UI is served from this server, align OAuth redirect URLs."""
+    dist = os.path.join(os.path.dirname(__file__), "web", "frontend", "dist")
+    if not os.path.isdir(dist):
+        return
+    redirect = os.getenv("OAUTH_REDIRECT_URI", "")
+    if "localhost" not in redirect and "127.0.0.1" not in redirect:
+        return
+    port = os.getenv("PORT", "8000")
+    origin = f"http://localhost:{port}"
+    callback = f"{origin}/api/auth/callback"
+    os.environ["FRONTEND_ORIGIN"] = origin
+    os.environ["POST_LOGIN_REDIRECT"] = origin
+    if redirect != callback:
+        os.environ["OAUTH_REDIRECT_URI"] = callback
+        print(
+            f"\nNOTE: Using bundled panel at {origin}/",
+            flush=True,
+        )
+        print(
+            "      Add this Discord OAuth redirect if you have not already:",
+            flush=True,
+        )
+        print(f"        {callback}\n",
+              flush=True,
+        )
+
+
+_prepare_local_bundled_panel()
+
 import scriptt  # noqa: E402  (import after load_dotenv on purpose)
 from web.api.app import create_app  # noqa: E402
+from web.api.config import get_settings  # noqa: E402
+
+get_settings.cache_clear()
 
 
 async def _serve_api() -> None:
     import uvicorn
+
+    from web.api.app import frontend_dist
 
     app = create_app(bot=scriptt.bot)
     # Expose the bot's sync helper on the bot object for the API to call.
     scriptt.bot.force_sync_guild_orbat = scriptt.force_sync_guild_orbat  # type: ignore[attr-defined]
 
     port = int(os.getenv("PORT", "8000"))
+    dist = frontend_dist()
+    print("\n--- Control panel ---", flush=True)
+    if dist is not None:
+        print(f"  Open in browser: http://localhost:{port}/", flush=True)
+    else:
+        print(
+            f"  API only (no built UI yet): http://localhost:{port}/api/health",
+            flush=True,
+        )
+        print(
+            "  Build the panel: cd web/frontend && npm install && npm run build",
+            flush=True,
+        )
+        print(f"  Or run the UI dev server: npm run dev  (API stays on port {port})",
+              flush=True)
+    print("---------------------\n", flush=True)
+
     config = uvicorn.Config(
         app, host="0.0.0.0", port=port, log_level="info", access_log=False
     )
