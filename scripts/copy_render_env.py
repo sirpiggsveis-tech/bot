@@ -21,13 +21,9 @@ KEYS = [
     "DISCORD_TOKEN",
     "GUILD_ID",
     "DATABASE_URL",
-    "DISCORD_CLIENT_ID",
-    "DISCORD_CLIENT_SECRET",
     "SESSION_SECRET",
-    "PANEL_ADMIN_ROLE_IDS",
-    "PANEL_STAFF_ROLE_IDS",
-    "PANEL_VIEWER_ROLE_IDS",
-    "PANEL_ALLOW_USER_IDS",
+    "PANEL_ADMIN_USERNAME",
+    "PANEL_ADMIN_PASSWORD",
 ]
 
 OUT = ROOT / "render-env-paste.txt"
@@ -66,15 +62,8 @@ def main() -> int:
         lines.extend(["", f"!!! {db_warn}", ""])
 
     if PAGES_URL.startswith("http"):
-        lines.append(f"OAUTH_REDIRECT_URI={PAGES_URL}/api/auth/callback")
         lines.append(f"FRONTEND_ORIGIN={PAGES_URL}")
-        lines.append(f"POST_LOGIN_REDIRECT={PAGES_URL}")
-        lines.append("SESSION_COOKIE_SAMESITE=lax")
-    else:
-        lines.append(f"OAUTH_REDIRECT_URI={RENDER_URL}/api/auth/callback")
-        lines.append("FRONTEND_ORIGIN=https://YOUR-PANEL.pages.dev")
-        lines.append("POST_LOGIN_REDIRECT=https://YOUR-PANEL.pages.dev")
-        lines.append("SESSION_COOKIE_SAMESITE=lax")
+    lines.append("SESSION_COOKIE_SAMESITE=lax")
     lines.append("SESSION_COOKIE_SECURE=1")
     lines.append("")
 

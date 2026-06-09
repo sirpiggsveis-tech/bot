@@ -1,32 +1,84 @@
-import { useEffect, useState } from "react";
-import { loginUrl } from "../api";
+import { FormEvent, useState } from "react";
+import { ApiError } from "../api";
+import { useAuth } from "../auth";
 
 export default function Login() {
-  const [forbidden, setForbidden] = useState(false);
+  const { login } = useAuth();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("error") === "forbidden") setForbidden(true);
-  }, []);
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    try {
+      await login(username.trim(), password);
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : "Login failed. Try again."
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
-      <div className="card w-full max-w-md p-8 text-center">
-        <h1 className="text-2xl font-bold tracking-tight">ORBAT Control Panel</h1>
-        <p className="mt-2 text-sm text-panel-muted">
-          Sign in with Discord to manage the order of battle and bot configuration.
+      <div className="card w-full max-w-md p-8">
+        <h1 className="text-center text-2xl font-bold tracking-tight">
+          ORBAT Control Panel
+        </h1>
+        <p className="mt-2 text-center text-sm text-panel-muted">
+          Sign in to manage the order of battle and bot configuration.
         </p>
 
-        {forbidden && (
-          <div className="mt-4 rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">
-            Your Discord account does not have access to this panel. Ask an admin to
-            grant your role.
+        <form onSubmit={onSubmit} className="mt-6 space-y-4 text-left">
+          <div>
+            <label className="label" htmlFor="username">
+              Username
+            </label>
+            <input
+              id="username"
+              className="input"
+              type="text"
+              autoComplete="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
           </div>
-        )}
 
-        <a href={loginUrl} className="btn-primary mt-6 w-full">
-          Login with Discord
-        </a>
+          <div>
+            <label className="label" htmlFor="password">
+              Password
+            </label>
+            <input
+              id="password"
+              className="input"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+
+          {error && (
+            <div className="rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            className="btn-primary w-full"
+            disabled={submitting}
+          >
+            {submitting ? "Signing in…" : "Sign in"}
+          </button>
+        </form>
       </div>
     </div>
   );

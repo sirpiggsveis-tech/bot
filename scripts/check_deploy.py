@@ -17,12 +17,8 @@ REQUIRED = (
     "DISCORD_TOKEN",
     "GUILD_ID",
     "DATABASE_URL",
-    "DISCORD_CLIENT_ID",
-    "DISCORD_CLIENT_SECRET",
     "SESSION_SECRET",
-    "OAUTH_REDIRECT_URI",
-    "FRONTEND_ORIGIN",
-    "PANEL_ADMIN_ROLE_IDS",
+    "PANEL_ADMIN_PASSWORD",
 )
 
 RENDER_URL = os.getenv("RENDER_SERVICE_URL", "https://bot-wf8x.onrender.com").rstrip("/")

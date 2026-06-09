@@ -1,29 +1,17 @@
-"""Login / logout / session endpoints (Discord OAuth2)."""
+"""Login / logout / session endpoints (username + password)."""
 
 from __future__ import annotations
 
 import secrets
 import time
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 
-from .. import discord_oauth
 from ..config import Settings, get_settings
+from ..schemas import LoginRequest
 from ..security import CurrentUser, get_current_user, issue_session
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
-
-# Short-lived CSRF state values for the OAuth round trip.
-_pending_states: dict[str, float] = {}
-_STATE_TTL = 600
-
-
-def _gc_states() -> None:
-    now = time.time()
-    for key, created in list(_pending_states.items()):
-        if now - created > _STATE_TTL:
-            _pending_states.pop(key, None)
 
 
 def _set_session_cookie(resp: Response, settings: Settings, token: str) -> None:
@@ -39,63 +27,41 @@ def _set_session_cookie(resp: Response, settings: Settings, token: str) -> None:
     )
 
 
-@router.get("/login")
-async def login(settings: Settings = Depends(get_settings)):
-    if not settings.oauth_configured:
-        raise HTTPException(
-            status.HTTP_503_SERVICE_UNAVAILABLE,
-            "OAuth is not configured. Set DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, "
-            "OAUTH_REDIRECT_URI and GUILD_ID.",
-        )
-    _gc_states()
-    state = secrets.token_urlsafe(24)
-    _pending_states[state] = time.time()
-    return RedirectResponse(discord_oauth.build_authorize_url(settings, state))
-
-
-@router.get("/callback")
-async def callback(
-    request: Request,
-    code: str | None = None,
-    state: str | None = None,
+@router.post("/login")
+async def login(
+    body: LoginRequest,
     settings: Settings = Depends(get_settings),
 ):
-    if not code or not state or state not in _pending_states:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid OAuth state")
-    _pending_states.pop(state, None)
+    if not settings.panel_admin_password:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "Panel login is not configured. Set PANEL_ADMIN_USERNAME and "
+            "PANEL_ADMIN_PASSWORD in the environment.",
+        )
 
-    token_data = await discord_oauth.exchange_code(settings, code)
-    access_token = token_data.get("access_token")
-    if not access_token:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Token exchange failed")
-
-    user = await discord_oauth.fetch_user(access_token)
-    user_id = int(user["id"])
-
-    member = await discord_oauth.fetch_guild_member(access_token, settings.guild_id)
-    role_ids = {int(r) for r in (member or {}).get("roles", [])}
-
-    tier = settings.role_for(user_id, role_ids)
-    if tier is None:
-        # Not allowed: bounce back to the frontend with an error flag.
-        return RedirectResponse(f"{settings.post_login_redirect}?error=forbidden")
+    user_ok = secrets.compare_digest(body.username, settings.panel_admin_username)
+    pass_ok = secrets.compare_digest(body.password, settings.panel_admin_password)
+    if not (user_ok and pass_ok):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid username or password")
 
     payload = {
-        "id": str(user_id),
-        "username": user.get("global_name") or user.get("username", ""),
-        "avatar": user.get("avatar"),
-        "tier": tier,
+        "id": "1",
+        "username": settings.panel_admin_username,
+        "avatar": None,
+        "tier": "admin",
         "iat": time.time(),
     }
     session_token = issue_session(settings, payload)
 
-    resp = RedirectResponse(settings.post_login_redirect)
+    resp = Response(content='{"ok":true}', media_type="application/json")
     _set_session_cookie(resp, settings, session_token)
     return resp
 
 
 @router.post("/logout")
 async def logout(settings: Settings = Depends(get_settings)):
+    from fastapi.responses import JSONResponse
+
     resp = JSONResponse({"ok": True})
     resp.delete_cookie(
         key=settings.cookie_name,

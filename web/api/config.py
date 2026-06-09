@@ -23,15 +23,12 @@ def _split_ids(raw: str) -> set[int]:
 class Settings:
     """Loaded once from environment variables.
 
-    Required for login to work:
-      DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, OAUTH_REDIRECT_URI,
-      SESSION_SECRET, GUILD_ID
+    Panel login:
+      PANEL_ADMIN_USERNAME, PANEL_ADMIN_PASSWORD
 
-    Role gating (Discord user must hold at least one listed role):
-      PANEL_ADMIN_ROLE_IDS   full read/write
-      PANEL_STAFF_ROLE_IDS   write to ORBAT, no destructive settings
-      PANEL_VIEWER_ROLE_IDS  read-only
-      PANEL_ALLOW_USER_IDS   bootstrap allowlist (always admin)
+    Legacy Discord OAuth / role gating (optional, unused by password login):
+      DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, OAUTH_REDIRECT_URI, GUILD_ID
+      PANEL_ADMIN_ROLE_IDS, PANEL_STAFF_ROLE_IDS, PANEL_VIEWER_ROLE_IDS
     """
 
     def __init__(self) -> None:
@@ -44,25 +41,29 @@ class Settings:
         self.cookie_domain = os.getenv("SESSION_COOKIE_DOMAIN") or None
         self.local_port = int(os.getenv("PORT", "8000"))
 
+        self.panel_admin_username = os.getenv("PANEL_ADMIN_USERNAME", "admin")
+        self.panel_admin_password = os.getenv("PANEL_ADMIN_PASSWORD", "")
+
         local_dev = _is_local_url(self.redirect_uri) or _is_local_url(
             os.getenv("FRONTEND_ORIGIN", "")
         )
-        # Cross-site (Cloudflare Pages -> Render) cookies need SameSite=None; Secure.
-        # Local http://localhost needs lax + insecure cookies unless overridden.
         cookie_secure_default = "0" if local_dev else "1"
-        cookie_samesite_default = "lax" if local_dev else "none"
+        cookie_samesite_default = "lax" if local_dev else "lax"
         self.cookie_secure = os.getenv("SESSION_COOKIE_SECURE", cookie_secure_default) != "0"
         self.cookie_samesite = os.getenv("SESSION_COOKIE_SAMESITE", cookie_samesite_default).lower()
 
         self.guild_id = int(os.getenv("GUILD_ID", "0") or "0")
         self.frontend_origin = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
-        # Where to send the browser after a successful login.
         self.post_login_redirect = os.getenv("POST_LOGIN_REDIRECT", self.frontend_origin)
 
         self.admin_role_ids = _split_ids(os.getenv("PANEL_ADMIN_ROLE_IDS", ""))
         self.staff_role_ids = _split_ids(os.getenv("PANEL_STAFF_ROLE_IDS", ""))
         self.viewer_role_ids = _split_ids(os.getenv("PANEL_VIEWER_ROLE_IDS", ""))
         self.allow_user_ids = _split_ids(os.getenv("PANEL_ALLOW_USER_IDS", ""))
+
+    @property
+    def panel_login_configured(self) -> bool:
+        return bool(self.panel_admin_username and self.panel_admin_password)
 
     @property
     def oauth_configured(self) -> bool:

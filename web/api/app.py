@@ -75,7 +75,7 @@ def create_app(bot: Any | None = None) -> FastAPI:
         dist = frontend_dist()
         return {
             "ok": True,
-            "oauth_configured": settings.oauth_configured,
+            "panel_login_configured": settings.panel_login_configured,
             "guild_id": str(settings.guild_id) if settings.guild_id else None,
             "bot_attached": app.state.bot is not None,
             "frontend_bundled": dist is not None,

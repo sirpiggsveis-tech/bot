@@ -52,3 +52,8 @@ class SettingsUpdate(BaseModel):
     embed_color: int | None = Field(default=None, ge=0, le=0xFFFFFF)
     rank_source: str | None = Field(default=None, pattern="^(roles|manual)$")
     auto_sync: bool | None = None
+
+
+class LoginRequest(BaseModel):
+    username: str = Field(min_length=1, max_length=80)
+    password: str = Field(min_length=1, max_length=200)

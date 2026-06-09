@@ -4,6 +4,7 @@ import { api, ApiError, Me } from "./api";
 interface AuthState {
   user: Me | null;
   loading: boolean;
+  login: (username: string, password: string) => Promise<void>;
   refresh: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -11,6 +12,7 @@ interface AuthState {
 const AuthContext = createContext<AuthState>({
   user: null,
   loading: true,
+  login: async () => {},
   refresh: async () => {},
   logout: async () => {},
 });
@@ -33,6 +35,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function login(username: string, password: string) {
+    await api.post("/api/auth/login", { username, password });
+    await refresh();
+  }
+
   async function logout() {
     await api.post("/api/auth/logout");
     setUser(null);
@@ -43,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, refresh, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, refresh, logout }}>
       {children}
     </AuthContext.Provider>
   );

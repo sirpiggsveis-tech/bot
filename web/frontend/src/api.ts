@@ -63,8 +63,6 @@ export const api = {
   del: <T>(path: string) => request<T>(path, { method: "DELETE" }),
 };
 
-export const loginUrl = `${API_BASE}/api/auth/login`;
-
 // ---- shared types -------------------------------------------------------
 export interface Me {
   id: string;
