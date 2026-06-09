@@ -1,0 +1,6 @@
+# Cloudflare Pages — frontend only (NOT the Python bot).
+# In the Pages dashboard set Root directory = web/frontend.
+# Do NOT use "npx wrangler deploy" as a deploy command; Pages builds and publishes automatically.
+name = "orbat-panel"
+compatibility_date = "2024-09-23"
+pages_build_output_dir = "dist"
