@@ -1,15 +1,13 @@
 const TOKEN_KEY = "orbat_panel_token";
-const DEFAULT_RENDER_API = "https://orbat-bot.onrender.com";
+
+/** Live Render service — always call this directly from the browser (CORS allows *.pages.dev). */
+export const RENDER_API = "https://orbat-bot.onrender.com";
 
 function resolveApiBase(): string {
   const raw = import.meta.env.VITE_API_BASE as string | undefined;
   if (raw) return raw.replace(/\/$/, "");
   if (import.meta.env.DEV) return "http://localhost:8000";
-  // Production on Cloudflare Pages: same-origin proxy (functions/api + functions/ping).
-  if (typeof window !== "undefined" && window.location.hostname.endsWith(".pages.dev")) {
-    return "";
-  }
-  return DEFAULT_RENDER_API;
+  return RENDER_API;
 }
 
 export const API_BASE = resolveApiBase();
@@ -34,7 +32,7 @@ export class ApiError extends Error {
   }
 }
 
-const REQUEST_TIMEOUT_MS = 60_000;
+const REQUEST_TIMEOUT_MS = 90_000;
 
 function authHeaders(extra?: HeadersInit): HeadersInit {
   const headers: Record<string, string> = {

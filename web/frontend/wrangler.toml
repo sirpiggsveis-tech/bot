@@ -4,6 +4,3 @@
 name = "orbat-panel"
 compatibility_date = "2024-09-23"
 pages_build_output_dir = "dist"
-
-# Optional override in Cloudflare Pages → Settings → Environment variables:
-# RENDER_API_URL = https://orbat-bot.onrender.com

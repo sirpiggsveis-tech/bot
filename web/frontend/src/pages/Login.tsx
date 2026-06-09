@@ -1,34 +1,47 @@
 import { FormEvent, useState } from "react";
-import { API_BASE, ApiError } from "../api";
+import { ApiError, RENDER_API } from "../api";
 import { useAuth } from "../auth";
 
 async function wakeServer(onStatus: (msg: string) => void): Promise<boolean> {
-  const deadline = Date.now() + 120_000;
+  const started = Date.now();
+  const maxWaitMs = 180_000;
   let attempt = 0;
-  while (Date.now() < deadline) {
+
+  while (Date.now() - started < maxWaitMs) {
     attempt += 1;
-    const elapsed = Math.round((Date.now() - (deadline - 120_000)) / 1000);
+    const elapsed = Math.round((Date.now() - started) / 1000);
     onStatus(
       attempt === 1
-        ? "Waking server (free tier sleeps when idle)…"
-        : `Still waking server… ${elapsed}s`
+        ? "Waking Render API (free tier sleeps when idle)…"
+        : `Still waking Render… ${elapsed}s`
     );
+
     try {
       const ctrl = new AbortController();
-      const timer = window.setTimeout(() => ctrl.abort(), 90_000);
-      const r = await fetch(`${API_BASE}/ping`, {
+      const timer = window.setTimeout(() => ctrl.abort(), 100_000);
+      const r = await fetch(`${RENDER_API}/ping`, {
         cache: "no-store",
+        mode: "cors",
         signal: ctrl.signal,
       });
       window.clearTimeout(timer);
-      if (r.ok) {
-        const text = (await r.text()).trim();
-        if (text === "ok") return true;
+
+      const text = (await r.text()).trim();
+      if (r.ok && text === "ok") return true;
+
+      // Cloudflare proxy bug: same-origin /ping can return the SPA HTML with 200.
+      if (text.startsWith("<!") || text.startsWith("<html")) {
+        throw new ApiError(
+          0,
+          "Panel is calling the wrong URL (got HTML instead of ok). Remove VITE_API_BASE on Cloudflare and redeploy."
+        );
       }
-    } catch {
-      /* cold start — retry */
+    } catch (err) {
+      if (err instanceof ApiError) throw err;
+      /* Render cold start — retry */
     }
-    await new Promise((r) => setTimeout(r, 2000));
+
+    await new Promise((r) => setTimeout(r, 2500));
   }
   return false;
 }
@@ -51,7 +64,7 @@ export default function Login() {
       if (!up) {
         throw new ApiError(
           0,
-          "Server did not respond in 2 minutes. In Render dashboard: open orbat-bot → Logs (crash loop?) → Manual Deploy. Or run start-panel.bat locally at http://localhost:8000/"
+          `Render did not respond in 3 minutes. Open ${RENDER_API}/ping in a new tab — if that works, redeploy Cloudflare Pages. If it hangs, check Render → orbat-bot → Logs.`
         );
       }
       setStatus("Signing in…");
@@ -76,7 +89,7 @@ export default function Login() {
           Sign in to manage the order of battle and bot configuration.
         </p>
         <p className="mt-1 text-center text-xs text-panel-muted">
-          Free hosting sleeps when idle — sign-in may take 30–60s the first time.
+          First sign-in after idle may take 30–90s while Render wakes up.
         </p>
 
         <form onSubmit={onSubmit} className="mt-6 space-y-4 text-left">
