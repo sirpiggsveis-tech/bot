@@ -1,6 +1,12 @@
 function resolveApiBase(): string {
+  // On Cloudflare Pages, always use same-origin /api (proxied to Render in _redirects).
+  // This avoids broken login when VITE_API_BASE was set to the Render URL at build time.
+  if (typeof window !== "undefined" && window.location.hostname.endsWith(".pages.dev")) {
+    return "";
+  }
+
   const raw = import.meta.env.VITE_API_BASE as string | undefined;
-  if (raw !== undefined) return raw.replace(/\/$/, "");
+  if (raw !== undefined && raw !== "") return raw.replace(/\/$/, "");
   // Vite dev server (port 5173) calls the API on 8000; a built bundle served
   // from the same server uses relative /api/... paths.
   if (import.meta.env.DEV) return "http://localhost:8000";

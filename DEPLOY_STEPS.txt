@@ -1,32 +1,21 @@
-ORBAT Bot — 24/7 deploy (only the clicks YOU must do)
-=====================================================
+ORBAT Bot — deploy (only the clicks YOU must do)
+================================================
 
-Your PC is ready. Run setup-deploy.bat to open all websites.
+Your PC is ready. Double-click setup-deploy.bat to open all websites.
 
-STEP 1 — Push latest code (one time, in terminal)
--------------------------------------------------
-If git commit failed before, run these 4 lines in PowerShell inside the Project folder:
-
-  $env:GIT_AUTHOR_NAME="filip"
-  $env:GIT_AUTHOR_EMAIL="filip@users.noreply.github.com"
-  $env:GIT_COMMITTER_NAME="filip"
-  $env:GIT_COMMITTER_EMAIL="filip@users.noreply.github.com"
-  git commit -m "Deploy helpers and panel fixes"
-  git push origin main
-
-STEP 2 — Render (bot runs 24/7 here) ~10 min
----------------------------------------------
+STEP 1 — Render (bot + API) ~10 min
+------------------------------------
 1. Go to https://dashboard.render.com and sign in with GitHub
-2. Open service "orbat-bot" (or create from Blueprint -> sirpiggsveis-tech/bot)
-3. Settings -> change Plan to Starter (~$7/mo) for true 24/7
+2. Open service "orbat-bot" (or New -> Blueprint -> sirpiggsveis-tech/bot)
+3. Keep Plan on FREE (sleeps when idle; wakes when an admin opens the panel)
 4. Environment tab:
-   - Run: python scripts/copy_render_env.py
-   - Open render-env-paste.txt, copy each KEY=value into Render
-   - After Cloudflare (step 3), come back and fix FRONTEND_ORIGIN + POST_LOGIN_REDIRECT
+   - Open render-env-paste.txt in your project folder
+   - Add each KEY=value line into Render (Add Environment Variable)
 5. Manual Deploy -> Deploy latest commit
 6. Wait until Live. Test: https://bot-wf8x.onrender.com/api/health  (should show ok:true)
+   First visit after idle may take 30-60 seconds.
 
-STEP 3 — Cloudflare Pages (the nice website) ~10 min
+STEP 2 — Cloudflare Pages (the nice website) ~10 min
 ----------------------------------------------------
 1. https://dash.cloudflare.com -> Workers & Pages -> Create -> Pages -> Connect Git
 2. Repo: sirpiggsveis-tech/bot
@@ -34,16 +23,26 @@ STEP 3 — Cloudflare Pages (the nice website) ~10 min
      Root directory:     web/frontend
      Build command:      npm run build
      Output directory:   dist
-4. Environment variable:
-     VITE_API_BASE = https://bot-wf8x.onrender.com
+4. Do NOT set VITE_API_BASE (leave it empty). The site proxies /api to Render.
 5. Deploy. Copy your URL (e.g. https://orbat-panel.pages.dev)
 6. Add to local .env:  PAGES_URL=https://YOUR-URL.pages.dev
-7. Re-run: python scripts/copy_render_env.py  and update Render env vars
 
-STEP 4 — Discord OAuth redirect ~2 min
+STEP 3 — Discord OAuth redirect ~2 min
 ---------------------------------------
-Discord Developer Portal -> your app -> OAuth2 -> Redirects -> Add:
+Discord Developer Portal -> your app -> OAuth2 -> Redirects -> Add BOTH:
+  https://YOUR-URL.pages.dev/api/auth/callback
   https://bot-wf8x.onrender.com/api/auth/callback
+
+STEP 4 — Link Render to your website URL ~2 min
+------------------------------------------------
+Run: python scripts/copy_render_env.py  (after PAGES_URL is in .env)
+Update Render Environment from render-env-paste.txt, especially:
+  OAUTH_REDIRECT_URI    = https://YOUR-URL.pages.dev/api/auth/callback
+  FRONTEND_ORIGIN       = https://YOUR-URL.pages.dev
+  POST_LOGIN_REDIRECT   = https://YOUR-URL.pages.dev
+  SESSION_COOKIE_SAMESITE = lax
+Then Manual Deploy again.
+Push latest code first so Cloudflare gets the /api proxy in _redirects.
 
 STEP 5 — Test
 -------------

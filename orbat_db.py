@@ -38,6 +38,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from psycopg.rows import dict_row
+from psycopg.conninfo import conninfo_to_dict
 from psycopg_pool import ConnectionPool
 
 logger = logging.getLogger(__name__)
@@ -57,8 +58,38 @@ _pool: ConnectionPool | None = None
 _pool_lock = threading.Lock()
 
 
+def _validate_database_url(url: str) -> None:
+    """Catch common Supabase paste mistakes before we open a connection pool."""
+    try:
+        info = conninfo_to_dict(url)
+    except Exception as exc:
+        raise RuntimeError(
+            "DATABASE_URL is not a valid PostgreSQL connection string. "
+            "Copy the URI again from Supabase -> Project Settings -> Database."
+        ) from exc
+
+    host = info.get("host") or ""
+    if "@" in host:
+        raise RuntimeError(
+            "DATABASE_URL is malformed (hostname contains '@'). "
+            "This usually means the Supabase URI was pasted incorrectly — "
+            "often an extra @ before the host, or a password with @ that "
+            "was not URL-encoded.\n\n"
+            "Fix in Supabase -> Project Settings -> Database -> Connection string -> URI:\n"
+            "  1. Choose 'Session pooler' (port 6543) or 'Direct' (port 5432)\n"
+            "  2. Copy the full URI and replace [YOUR-PASSWORD] with your DB password\n"
+            "  3. If the password has special characters (@ # : / etc.), reset the "
+            "database password to letters and numbers only, OR URL-encode them "
+            "(@ becomes %40)\n"
+            "Correct shape:\n"
+            "  postgresql://postgres.<project-ref>:<password>@aws-0-eu-west-1.pooler.supabase.com:6543/postgres"
+        )
+    if host and "supabase.com" not in host and "supabase.co" not in host:
+        logger.warning("DATABASE_URL host %r does not look like Supabase", host)
+
+
 def _database_url() -> str:
-    url = os.getenv("DATABASE_URL")
+    url = (os.getenv("DATABASE_URL") or "").strip()
     if not url:
         raise RuntimeError(
             "DATABASE_URL is not set. Set it to your Supabase PostgreSQL "
@@ -67,6 +98,7 @@ def _database_url() -> str:
             "(or the pooled :6543 connection string). The ORBAT data layer "
             "cannot run without it."
         )
+    _validate_database_url(url)
     return url
 
 

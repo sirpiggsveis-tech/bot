@@ -33,6 +33,22 @@ KEYS = [
 OUT = ROOT / "render-env-paste.txt"
 
 
+def _validate_database_url(url: str) -> str | None:
+    try:
+        from psycopg.conninfo import conninfo_to_dict
+
+        host = conninfo_to_dict(url).get("host") or ""
+        if "@" in host:
+            return (
+                "DATABASE_URL looks WRONG (hostname contains '@'). "
+                "Re-copy from Supabase -> Database -> Connection string -> URI. "
+                "Use postgres.<project-ref>:password@host — not an extra @ before the host."
+            )
+    except Exception:
+        return "DATABASE_URL could not be parsed — re-copy from Supabase."
+    return None
+
+
 def main() -> int:
     lines: list[str] = [
         "Paste these into Render -> your service -> Environment",
@@ -45,14 +61,20 @@ def main() -> int:
         if val:
             lines.append(f"{key}={val}")
 
-    lines.append(f"OAUTH_REDIRECT_URI={RENDER_URL}/api/auth/callback")
+    db_warn = _validate_database_url(os.getenv("DATABASE_URL", ""))
+    if db_warn:
+        lines.extend(["", f"!!! {db_warn}", ""])
+
     if PAGES_URL.startswith("http"):
+        lines.append(f"OAUTH_REDIRECT_URI={PAGES_URL}/api/auth/callback")
         lines.append(f"FRONTEND_ORIGIN={PAGES_URL}")
         lines.append(f"POST_LOGIN_REDIRECT={PAGES_URL}")
+        lines.append("SESSION_COOKIE_SAMESITE=lax")
     else:
+        lines.append(f"OAUTH_REDIRECT_URI={RENDER_URL}/api/auth/callback")
         lines.append("FRONTEND_ORIGIN=https://YOUR-PANEL.pages.dev")
         lines.append("POST_LOGIN_REDIRECT=https://YOUR-PANEL.pages.dev")
-    lines.append("SESSION_COOKIE_SAMESITE=none")
+        lines.append("SESSION_COOKIE_SAMESITE=lax")
     lines.append("SESSION_COOKIE_SECURE=1")
     lines.append("")
 
