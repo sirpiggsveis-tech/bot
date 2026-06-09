@@ -73,11 +73,17 @@ async function request<T>(
     let detail = resp.statusText;
     try {
       const body = await resp.json();
-      detail = body.detail || detail;
+      if (typeof body.detail === "string") detail = body.detail;
+      else if (Array.isArray(body.detail)) detail = body.detail.map((d: { msg?: string }) => d.msg).join(", ");
     } catch {
-      /* ignore */
+      try {
+        const text = await resp.text();
+        if (text) detail = text.slice(0, 200);
+      } catch {
+        /* ignore */
+      }
     }
-    throw new ApiError(resp.status, detail);
+    throw new ApiError(resp.status, detail || "Request failed");
   }
 
   if (resp.status === 204) return undefined as T;

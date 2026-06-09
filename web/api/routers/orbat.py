@@ -32,7 +32,18 @@ def _gid(settings: Settings) -> int:
 
 
 async def _run(func, *args, **kwargs):
-    return await asyncio.to_thread(func, *args, **kwargs)
+    try:
+        return await asyncio.to_thread(func, *args, **kwargs)
+    except RuntimeError as exc:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            str(exc),
+        ) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            f"Database error: {exc}",
+        ) from exc
 
 
 def _rank_sort_key(member: dict, rank_orders: dict[str, int]):

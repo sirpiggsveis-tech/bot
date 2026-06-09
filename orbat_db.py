@@ -118,7 +118,7 @@ def _get_pool() -> ConnectionPool:
                     timeout=10,
                     kwargs={"row_factory": dict_row},
                     name="orbat",
-                    open=False,
+                    open=True,
                 )
     return _pool
 
