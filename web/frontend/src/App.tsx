@@ -8,6 +8,11 @@ import Members from "./pages/orbat/Members";
 import Ranks from "./pages/orbat/Ranks";
 import Positions from "./pages/orbat/Positions";
 import Settings from "./pages/orbat/Settings";
+import Commands from "./pages/Commands";
+import PdMode from "./pages/PdMode";
+import AutoRoles from "./pages/AutoRoles";
+import Squads from "./pages/Squads";
+import Messaging from "./pages/Messaging";
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -26,11 +31,16 @@ export default function App() {
     <Layout>
       <Routes>
         <Route path="/" element={<Dashboard />} />
+        <Route path="/commands" element={<Commands />} />
         <Route path="/orbat/units" element={<Units />} />
         <Route path="/orbat/members" element={<Members />} />
         <Route path="/orbat/ranks" element={<Ranks />} />
         <Route path="/orbat/positions" element={<Positions />} />
         <Route path="/orbat/settings" element={<Settings />} />
+        <Route path="/pd-mode" element={<PdMode />} />
+        <Route path="/auto-roles" element={<AutoRoles />} />
+        <Route path="/squads" element={<Squads />} />
+        <Route path="/messaging" element={<Messaging />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

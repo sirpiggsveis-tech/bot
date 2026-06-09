@@ -173,3 +173,75 @@ export interface Overview {
   ranks: Rank[];
   positions: Position[];
 }
+
+export interface BotStatus {
+  online: boolean;
+  attached: boolean;
+}
+
+export interface GuildChannel {
+  id: string;
+  name: string;
+  category?: string | null;
+}
+
+export interface GuildRole {
+  id: string;
+  name: string;
+  color: number;
+}
+
+export interface GuildMember {
+  id: string;
+  name: string;
+}
+
+export interface GuildDirectory {
+  text_channels: GuildChannel[];
+  voice_channels: GuildChannel[];
+  categories: GuildChannel[];
+  roles: GuildRole[];
+  members: GuildMember[];
+  bot_offline?: boolean;
+  message?: string;
+}
+
+export interface PdConfig {
+  channel_ids: number[];
+  lock_role_id: number | null;
+  lock_role_ids: number[];
+  bypass_role_ids: number[];
+  active: boolean;
+  saved_permissions: Record<string, unknown>;
+}
+
+export interface ReactionTrigger {
+  channel_id: number;
+  emoji: string;
+  role_ids: number[];
+}
+
+export interface AutoroleConfig {
+  join_roles: number[];
+  reaction_triggers: ReactionTrigger[];
+  join_nickname: string;
+}
+
+export interface SquadConfig {
+  staff_role_ids: number[];
+  category_id: number | null;
+  squads: { channel_id: number; name: string }[];
+}
+
+export interface CommandInfo {
+  name: string;
+  usage: string;
+  summary: string;
+  access: string;
+  panel?: string;
+}
+
+export interface CommandCategory {
+  category: string;
+  commands: CommandInfo[];
+}

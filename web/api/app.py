@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config import get_settings
-from .routers import auth, orbat
+from .routers import auth, bot as bot_router, orbat
 
 _FRONTEND_DIST = Path(__file__).resolve().parents[1] / "frontend" / "dist"
 
@@ -91,6 +91,7 @@ def create_app(bot: Any | None = None) -> FastAPI:
         }
 
     app.include_router(auth.router)
+    app.include_router(bot_router.router)
     app.include_router(orbat.router)
     _mount_frontend(app)
     return app

@@ -1129,18 +1129,28 @@ async def defer_ephemeral(interaction: discord.Interaction) -> bool:
 
 
 def load_autorole_store() -> dict:
-    if not os.path.exists(AUTOROLE_CONFIG_PATH):
-        return {}
     try:
-        with open(AUTOROLE_CONFIG_PATH, encoding="utf-8") as file:
-            return json.load(file)
-    except (json.JSONDecodeError, OSError):
-        return {}
+        import bot_config_db
+
+        return bot_config_db.load_config_store("autorole")
+    except Exception:
+        if not os.path.exists(AUTOROLE_CONFIG_PATH):
+            return {}
+        try:
+            with open(AUTOROLE_CONFIG_PATH, encoding="utf-8") as file:
+                return json.load(file)
+        except (json.JSONDecodeError, OSError):
+            return {}
 
 
 def save_autorole_store(data: dict) -> None:
-    with open(AUTOROLE_CONFIG_PATH, "w", encoding="utf-8") as file:
-        json.dump(data, file, indent=2)
+    try:
+        import bot_config_db
+
+        bot_config_db.save_config_store("autorole", data)
+    except Exception:
+        with open(AUTOROLE_CONFIG_PATH, "w", encoding="utf-8") as file:
+            json.dump(data, file, indent=2)
 
 
 def get_guild_autorole(guild_id: int) -> dict:
@@ -2624,18 +2634,28 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
 
 
 def load_pd_store() -> dict:
-    if not os.path.exists(CONFIG_PATH):
-        return {}
     try:
-        with open(CONFIG_PATH, encoding="utf-8") as file:
-            return json.load(file)
-    except (json.JSONDecodeError, OSError):
-        return {}
+        import bot_config_db
+
+        return bot_config_db.load_config_store("pd")
+    except Exception:
+        if not os.path.exists(CONFIG_PATH):
+            return {}
+        try:
+            with open(CONFIG_PATH, encoding="utf-8") as file:
+                return json.load(file)
+        except (json.JSONDecodeError, OSError):
+            return {}
 
 
 def save_pd_store(data: dict) -> None:
-    with open(CONFIG_PATH, "w", encoding="utf-8") as file:
-        json.dump(data, file, indent=2)
+    try:
+        import bot_config_db
+
+        bot_config_db.save_config_store("pd", data)
+    except Exception:
+        with open(CONFIG_PATH, "w", encoding="utf-8") as file:
+            json.dump(data, file, indent=2)
 
 
 def get_guild_pd(guild_id: int) -> dict:
@@ -3827,18 +3847,28 @@ async def pdoff(interaction: discord.Interaction):
 
 
 def load_squad_store() -> dict:
-    if not os.path.exists(SQUAD_CONFIG_PATH):
-        return {}
     try:
-        with open(SQUAD_CONFIG_PATH, encoding="utf-8") as file:
-            return json.load(file)
-    except (json.JSONDecodeError, OSError):
-        return {}
+        import bot_config_db
+
+        return bot_config_db.load_config_store("squad")
+    except Exception:
+        if not os.path.exists(SQUAD_CONFIG_PATH):
+            return {}
+        try:
+            with open(SQUAD_CONFIG_PATH, encoding="utf-8") as file:
+                return json.load(file)
+        except (json.JSONDecodeError, OSError):
+            return {}
 
 
 def save_squad_store(data: dict) -> None:
-    with open(SQUAD_CONFIG_PATH, "w", encoding="utf-8") as file:
-        json.dump(data, file, indent=2)
+    try:
+        import bot_config_db
+
+        bot_config_db.save_config_store("squad", data)
+    except Exception:
+        with open(SQUAD_CONFIG_PATH, "w", encoding="utf-8") as file:
+            json.dump(data, file, indent=2)
 
 
 def get_guild_squad(guild_id: int) -> dict:
@@ -5438,6 +5468,121 @@ async def orbatclear(interaction: discord.Interaction):
         f"**{member_count}** member(s) are still tracked (now unassigned).",
         ephemeral=True,
     )
+
+
+# --- Control panel actions (no Discord interaction required) ---
+
+
+async def panel_send_say(guild: discord.Guild, channel_id: int, text: str) -> None:
+    channel = guild.get_channel(channel_id)
+    if not isinstance(channel, discord.TextChannel):
+        fetched = await guild.fetch_channel(channel_id)
+        channel = fetched if isinstance(fetched, discord.TextChannel) else None
+    if channel is None:
+        raise ValueError("Text channel not found")
+    if not channel.permissions_for(guild.me).send_messages:
+        raise ValueError(f"Bot cannot send messages in #{channel.name}")
+    await channel.send(embed=make_say_embed(text))
+
+
+async def panel_purge_channel(
+    guild: discord.Guild, channel_id: int, amount: int
+) -> int:
+    amount = max(1, min(MAX_PURGE, amount))
+    channel = guild.get_channel(channel_id)
+    if not isinstance(channel, discord.TextChannel):
+        fetched = await guild.fetch_channel(channel_id)
+        channel = fetched if isinstance(fetched, discord.TextChannel) else None
+    if channel is None:
+        raise ValueError("Text channel not found")
+    deleted = await channel.purge(limit=amount)
+    return len(deleted)
+
+
+async def panel_speak_in_voice_channels(
+    guild: discord.Guild, channel_ids: list[int], text: str
+) -> tuple[list[str], list[str]]:
+    voice_channels: list[discord.VoiceChannel] = []
+    for channel_id in channel_ids:
+        channel = guild.get_channel(channel_id)
+        if not isinstance(channel, discord.VoiceChannel):
+            try:
+                fetched = await guild.fetch_channel(channel_id)
+            except (discord.NotFound, discord.HTTPException):
+                fetched = None
+            channel = fetched if isinstance(fetched, discord.VoiceChannel) else None
+        if channel is None:
+            raise ValueError(f"Voice channel {channel_id} not found")
+        voice_channels.append(channel)
+
+    ffmpeg = find_ffmpeg()
+    if not ffmpeg:
+        raise ValueError("ffmpeg not found — install ffmpeg and restart the bot")
+
+    tmp_path = None
+    lock = get_guild_lock(guild.id)
+    spoken: list[str] = []
+    failed: list[str] = []
+
+    async with lock:
+        try:
+            with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
+                tmp_path = tmp.name
+            await generate_tts(text, tmp_path)
+            for channel in voice_channels:
+                try:
+                    vc = await get_voice_client(guild, channel)
+                    await play_audio_file(vc, tmp_path, ffmpeg)
+                    spoken.append(channel.name)
+                except Exception as exc:
+                    failed.append(f"{channel.name}: {exc}")
+        finally:
+            if tmp_path and os.path.isfile(tmp_path):
+                try:
+                    os.remove(tmp_path)
+                except OSError:
+                    pass
+    return spoken, failed
+
+
+async def panel_delete_squad(guild: discord.Guild, channel_id: int) -> str:
+    channel = guild.get_channel(channel_id)
+    if not isinstance(channel, discord.VoiceChannel):
+        fetched = await guild.fetch_channel(channel_id)
+        channel = fetched if isinstance(fetched, discord.VoiceChannel) else None
+    if channel is None:
+        raise ValueError("Squad voice channel not found")
+    name = channel.name
+    await channel.delete(reason="Deleted from control panel")
+    remove_squad_record(guild.id, channel_id)
+    return name
+
+
+async def panel_create_squad(
+    guild: discord.Guild,
+    name: str,
+    member_ids: list[int],
+    creator_id: int,
+) -> dict:
+    members: list[discord.Member] = []
+    for user_id in member_ids:
+        member = await resolve_guild_member(guild, user_id)
+        if member is not None:
+            members.append(member)
+    creator = await resolve_guild_member(guild, creator_id)
+    if creator is None:
+        raise ValueError("Creator member not found")
+    if not members:
+        members = [creator]
+    channel = await create_squad_voice_channel(guild, name, members, creator)
+    add_squad_record(guild.id, channel.id, name)
+    sent, failed = await notify_squad_members(members, channel)
+    return {
+        "channel_id": channel.id,
+        "name": channel.name,
+        "notified": sent,
+        "notify_failed": failed,
+    }
 
 
 def build_help_embed() -> discord.Embed:

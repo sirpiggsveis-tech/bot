@@ -6,20 +6,20 @@ interface NavItem {
   to: string;
   label: string;
   group: string;
-  disabled?: boolean;
 }
 
 const NAV: NavItem[] = [
   { to: "/", label: "Dashboard", group: "Overview" },
+  { to: "/commands", label: "All commands", group: "Overview" },
   { to: "/orbat/units", label: "Units", group: "ORBAT" },
   { to: "/orbat/members", label: "Members", group: "ORBAT" },
   { to: "/orbat/ranks", label: "Ranks", group: "ORBAT" },
   { to: "/orbat/positions", label: "Positions", group: "ORBAT" },
   { to: "/orbat/settings", label: "Settings", group: "ORBAT" },
-  { to: "/auto-roles", label: "Auto-roles", group: "Bot", disabled: true },
-  { to: "/pd-mode", label: "PD mode", group: "Bot", disabled: true },
-  { to: "/squads", label: "Squads", group: "Bot", disabled: true },
-  { to: "/messaging", label: "Messaging", group: "Bot", disabled: true },
+  { to: "/messaging", label: "Messaging", group: "Bot" },
+  { to: "/pd-mode", label: "PD mode", group: "Bot" },
+  { to: "/auto-roles", label: "Auto-roles", group: "Bot" },
+  { to: "/squads", label: "Squads", group: "Bot" },
 ];
 
 export default function Layout({ children }: { children: ReactNode }) {
@@ -42,33 +42,22 @@ export default function Layout({ children }: { children: ReactNode }) {
               <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-panel-muted">
                 {group}
               </div>
-              {NAV.filter((n) => n.group === group).map((item) =>
-                item.disabled ? (
-                  <span
-                    key={item.to}
-                    className="block cursor-not-allowed rounded-md px-2 py-1.5 text-sm text-panel-muted/40"
-                    title="Coming soon"
-                  >
-                    {item.label}
-                    <span className="ml-1 text-[9px] uppercase">soon</span>
-                  </span>
-                ) : (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    end={item.to === "/"}
-                    className={({ isActive }) =>
-                      `block rounded-md px-2 py-1.5 text-sm transition-colors ${
-                        isActive
-                          ? "bg-panel-accent/15 text-panel-accent"
-                          : "text-panel-muted hover:bg-panel-bg hover:text-white"
-                      }`
-                    }
-                  >
-                    {item.label}
-                  </NavLink>
-                )
-              )}
+              {NAV.filter((n) => n.group === group).map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.to === "/"}
+                  className={({ isActive }) =>
+                    `block rounded-md px-2 py-1.5 text-sm transition-colors ${
+                      isActive
+                        ? "bg-panel-accent/15 text-panel-accent"
+                        : "text-panel-muted hover:bg-panel-bg hover:text-white"
+                    }`
+                  }
+                >
+                  {item.label}
+                </NavLink>
+              ))}
             </div>
           ))}
         </nav>

@@ -57,3 +57,50 @@ class SettingsUpdate(BaseModel):
 class LoginRequest(BaseModel):
     username: str = Field(min_length=1, max_length=80)
     password: str = Field(min_length=1, max_length=200)
+
+
+class PdConfigUpdate(BaseModel):
+    lock_role_id: int | None = None
+    channel_ids: list[int] | None = None
+    bypass_role_ids: list[int] | None = None
+
+
+class AutoroleConfigUpdate(BaseModel):
+    join_roles: list[int] | None = None
+    join_nickname: str | None = None
+    reaction_triggers: list[dict] | None = None
+
+
+class ReactionTriggerCreate(BaseModel):
+    channel_id: int
+    emoji: str = Field(min_length=1, max_length=100)
+    role_ids: list[int] = Field(default_factory=list)
+
+
+class SquadConfigUpdate(BaseModel):
+    category_id: int | None = None
+    staff_role_ids: list[int] | None = None
+
+
+class SquadCreateRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    member_ids: list[int] = Field(default_factory=list)
+
+
+class SquadDeleteRequest(BaseModel):
+    channel_id: int
+
+
+class SayRequest(BaseModel):
+    channel_id: int
+    text: str = Field(min_length=1, max_length=4000)
+
+
+class OrderRequest(BaseModel):
+    channel_ids: list[int] = Field(min_length=1)
+    text: str = Field(min_length=1, max_length=500)
+
+
+class PurgeRequest(BaseModel):
+    channel_id: int
+    amount: int = Field(ge=1, le=50)

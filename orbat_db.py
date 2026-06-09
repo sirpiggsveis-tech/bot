@@ -228,6 +228,13 @@ def init_orbat_db() -> None:
                 cur.execute(statement)
         conn.commit()
 
+    try:
+        import bot_config_db
+
+        bot_config_db.init_bot_config_db()
+    except Exception as exc:
+        logger.warning("bot_config schema init skipped: %s", exc)
+
 
 # ---------------------------------------------------------------------------
 # Settings

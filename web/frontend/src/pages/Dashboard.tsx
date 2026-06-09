@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, Overview } from "../api";
 import { PageHeader, ErrorBanner } from "../components/ui";
+import BotBanner from "../components/BotBanner";
 import { useAuth } from "../auth";
 
 function Stat({ label, value }: { label: string; value: number | string }) {
@@ -78,6 +79,7 @@ export default function Dashboard() {
           </button>
         }
       />
+      <BotBanner />
       <ErrorBanner message={error} />
 
       {data && (
