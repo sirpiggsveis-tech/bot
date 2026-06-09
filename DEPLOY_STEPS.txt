@@ -1,44 +1,18 @@
-ORBAT Bot — deploy (24/7 server, no PC required)
-=================================================
+ORBAT — quick deploy index
+==========================
 
-Architecture:
-  Cloudflare Pages (UI)  ->  Render Starter (bot + API)  ->  Supabase
+24/7 WITHOUT YOUR PC (recommended — FREE):
+  1. Double-click  setup-oracle-server.bat
+  2. Follow  HOSTING_24_7.txt  step by step
 
-STEP 1 — Render (bot + panel API, 24/7) ~15 min
-------------------------------------------------
-1. https://dashboard.render.com -> service "orbat-bot"
-2. Settings -> Instance Type -> **Starter** (~$7/mo, always on)
-   (Free tier cannot keep the Discord bot online 24/7.)
-3. Settings -> Build & Deploy:
-     Build:  pip install -r requirements.txt
-     Start:  python run.py
-     Health: /ping
-4. Environment — required:
-     DISCORD_TOKEN
-     GUILD_ID
-     DATABASE_URL
-     SESSION_SECRET
-     PANEL_ADMIN_PASSWORD
-     FRONTEND_ORIGIN       (your Cloudflare Pages URL, after step 2)
-     POST_LOGIN_REDIRECT   (same)
-5. Manual Deploy -> latest commit
-6. Test: https://orbat-bot.onrender.com/api/health
-     bot_ready: true  |  panel_login_configured: true
-7. Discord: bot should be online in your server.
+24/7 ON RENDER (~$7/mo, easier, less steps):
+  1. Render -> orbat-bot -> Starter plan
+  2. Start: python run.py  |  Build: pip install -r requirements.txt
+  3. Set DISCORD_TOKEN + env vars -> Deploy
+  4. VITE_API_BASE=https://orbat-bot.onrender.com on Cloudflare Pages
 
-See HOSTING_24_7.txt for a free VM option if you cannot use Render Starter.
+PANEL UI ONLY (Cloudflare Pages):
+  See HOSTING_24_7.txt STEP 5 and original Cloudflare steps in git history.
 
-STEP 2 — Cloudflare Pages (panel UI) ~10 min
-----------------------------------------------
-1. dash.cloudflare.com -> Pages -> Connect Git -> sirpiggsveis-tech/bot
-2. Root: web/frontend | Build: npm run build | Output: dist
-3. Do NOT set VITE_API_BASE (leave empty)
-4. Copy your URL -> add FRONTEND_ORIGIN on Render -> redeploy Render
-
-STEP 3 — Test
--------------
-1. Open Cloudflare Pages URL -> sign in
-2. Sidebar: Messaging, PD mode, Squads, ORBAT, All commands
-3. Bot actions work when /api/health shows bot_ready: true
-
-Your PC does NOT need to run start-bot.bat if Render Starter is live.
+PC local dev only:
+  start-bot.bat  or  start.bat

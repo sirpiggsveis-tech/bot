@@ -16,3 +16,4 @@ web/frontend/dist/
 
 # Local deploy helper (contains secrets)
 render-env-paste.txt
+server.env

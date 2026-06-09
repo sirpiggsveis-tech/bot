@@ -1,0 +1,23 @@
+# 24/7 bot + API on your own server (Oracle Cloud free VM, VPS, etc.)
+# Usage: copy .env to this folder, then:  docker compose up -d --build
+
+services:
+  orbat:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "127.0.0.1:8000:8000"
+
+  # Optional HTTPS tunnel to Cloudflare (set CLOUDFLARE_TUNNEL_TOKEN in .env).
+  # Create tunnel in Cloudflare Zero Trust -> Networks -> Tunnels -> Public hostname -> http://orbat:8000
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on:
+      - orbat
+    profiles:
+      - tunnel
