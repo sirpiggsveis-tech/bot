@@ -23,18 +23,37 @@ export class ApiError extends Error {
   }
 }
 
+const REQUEST_TIMEOUT_MS = 90_000;
+
 async function request<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const resp = await fetch(`${API_BASE}${path}`, {
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  let resp: Response;
+  try {
+    resp = await fetch(`${API_BASE}${path}`, {
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      },
+      signal: controller.signal,
+      ...options,
+    });
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new ApiError(
+        0,
+        "Server took too long to respond. On free hosting it may be waking up — wait a minute and try again, or open the Render URL directly."
+      );
+    }
+    throw new ApiError(0, "Could not reach the server. Check your connection and try again.");
+  } finally {
+    window.clearTimeout(timer);
+  }
 
   if (!resp.ok) {
     let detail = resp.statusText;
@@ -70,6 +89,13 @@ export interface Me {
   avatar: string | null;
   tier: "admin" | "staff" | "viewer";
 }
+
+interface LoginResponse {
+  ok: boolean;
+  user: Me;
+}
+
+export type { LoginResponse };
 
 export interface Unit {
   id: number;

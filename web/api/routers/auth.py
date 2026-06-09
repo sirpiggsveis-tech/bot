@@ -53,7 +53,10 @@ async def login(
     }
     session_token = issue_session(settings, payload)
 
-    resp = Response(content='{"ok":true}', media_type="application/json")
+    import json
+
+    body = json.dumps({"ok": True, "user": payload})
+    resp = Response(content=body, media_type="application/json")
     _set_session_cookie(resp, settings, session_token)
     return resp
 

@@ -33,6 +33,9 @@ export default function Login() {
         <p className="mt-2 text-center text-sm text-panel-muted">
           Sign in to manage the order of battle and bot configuration.
         </p>
+        <p className="mt-1 text-center text-xs text-panel-muted">
+          First visit may take up to a minute while the free server wakes up.
+        </p>
 
         <form onSubmit={onSubmit} className="mt-6 space-y-4 text-left">
           <div>

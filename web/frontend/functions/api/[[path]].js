@@ -2,6 +2,7 @@
  * Proxy /api/* to Render. Rewrites Set-Cookie so sessions work on *.pages.dev.
  */
 const API_ORIGIN = "https://bot-wf8x.onrender.com";
+const UPSTREAM_TIMEOUT_MS = 55_000;
 
 function rewriteSetCookie(raw) {
   return raw
@@ -21,12 +22,24 @@ export async function onRequest(context) {
     method: context.request.method,
     headers,
     redirect: "manual",
+    signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
   };
   if (context.request.method !== "GET" && context.request.method !== "HEAD") {
     init.body = await context.request.arrayBuffer();
   }
 
-  const upstream = await fetch(target.toString(), init);
+  let upstream;
+  try {
+    upstream = await fetch(target.toString(), init);
+  } catch {
+    return new Response(
+      JSON.stringify({
+        detail:
+          "Backend is waking up or unreachable. Wait a minute and try again.",
+      }),
+      { status: 503, headers: { "Content-Type": "application/json" } }
+    );
+  }
   const outHeaders = new Headers(upstream.headers);
 
   outHeaders.delete("set-cookie");

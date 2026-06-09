@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { api, ApiError, Me } from "./api";
+import { api, ApiError, LoginResponse, Me } from "./api";
 
 interface AuthState {
   user: Me | null;
@@ -26,35 +26,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const me = await api.get<Me>("/api/auth/me");
       setUser(me);
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 401) {
-        setUser(null);
-      }
+    } catch {
+      setUser(null);
     } finally {
       setLoading(false);
     }
   }
 
   async function login(username: string, password: string) {
-    await api.post("/api/auth/login", { username, password });
-    setLoading(true);
-    try {
-      const me = await api.get<Me>("/api/auth/me");
-      setUser(me);
-    } catch (err) {
-      setUser(null);
-      if (err instanceof ApiError) {
-        throw new ApiError(
-          err.status,
-          err.status === 401
-            ? "Signed in but session was not saved. Try again or use the Render URL."
-            : err.message
-        );
-      }
-      throw err;
-    } finally {
-      setLoading(false);
-    }
+    const result = await api.post<LoginResponse>("/api/auth/login", {
+      username,
+      password,
+    });
+    setUser(result.user);
   }
 
   async function logout() {
