@@ -33,10 +33,34 @@ async def _serve_api() -> None:
     await server.serve()
 
 
+_REQUIRED_ENV = (
+    "DISCORD_TOKEN",
+    "GUILD_ID",
+    "DATABASE_URL",
+    "DISCORD_CLIENT_ID",
+    "DISCORD_CLIENT_SECRET",
+    "SESSION_SECRET",
+    "OAUTH_REDIRECT_URI",
+    "FRONTEND_ORIGIN",
+)
+
+
+def _require_env() -> None:
+    missing = [key for key in _REQUIRED_ENV if not os.getenv(key, "").strip()]
+    if missing:
+        raise SystemExit(
+            "Missing required environment variables on Render:\n  - "
+            + "\n  - ".join(missing)
+            + "\n\nRender Dashboard -> your service -> Environment -> Add Environment Variable. "
+            + "The local .env file is not deployed (gitignored)."
+        )
+
+
 async def main() -> None:
+    _require_env()
     token = scriptt.TOKEN
     if not token:
-        raise SystemExit("Set DISCORD_TOKEN in the environment / .env")
+        raise SystemExit("DISCORD_TOKEN is empty. Check the value in Render Environment.")
 
     await asyncio.gather(
         scriptt.bot.start(token),
