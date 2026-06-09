@@ -5,6 +5,10 @@ function resolveApiBase(): string {
   const raw = import.meta.env.VITE_API_BASE as string | undefined;
   if (raw) return raw.replace(/\/$/, "");
   if (import.meta.env.DEV) return "http://localhost:8000";
+  // Production on Cloudflare Pages: same-origin proxy (functions/api + functions/ping).
+  if (typeof window !== "undefined" && window.location.hostname.endsWith(".pages.dev")) {
+    return "";
+  }
   return DEFAULT_RENDER_API;
 }
 

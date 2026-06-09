@@ -15,7 +15,7 @@ async function wakeServer(onStatus: (msg: string) => void): Promise<boolean> {
     );
     try {
       const ctrl = new AbortController();
-      const timer = window.setTimeout(() => ctrl.abort(), 25_000);
+      const timer = window.setTimeout(() => ctrl.abort(), 90_000);
       const r = await fetch(`${API_BASE}/ping`, {
         cache: "no-store",
         signal: ctrl.signal,

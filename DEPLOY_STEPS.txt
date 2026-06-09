@@ -25,7 +25,7 @@ STEP 2 — Cloudflare Pages (the nice website) ~10 min
      Root directory:     web/frontend
      Build command:      npm run build
      Output directory:   dist
-4. Do NOT set VITE_API_BASE (leave it empty). The site proxies /api to Render.
+4. Do NOT set VITE_API_BASE (leave it empty). Cloudflare Functions proxy /api and /ping to Render.
 5. Deploy. Copy your URL (e.g. https://orbat-panel.pages.dev)
 6. Add to local .env:  PAGES_URL=https://YOUR-URL.pages.dev
 
