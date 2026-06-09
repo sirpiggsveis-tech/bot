@@ -46,6 +46,7 @@ def _prepare_local_bundled_panel() -> None:
 _prepare_local_bundled_panel()
 
 import scriptt  # noqa: E402  (import after load_dotenv on purpose)
+from orbat_db import init_orbat_db  # noqa: E402
 from web.api.app import create_app  # noqa: E402
 from web.api.config import get_settings  # noqa: E402
 
@@ -106,15 +107,26 @@ def _require_env() -> None:
         )
 
 
+async def _init_db_background() -> None:
+    """Don't block the HTTP port on Supabase schema setup."""
+    try:
+        await asyncio.to_thread(init_orbat_db)
+        print("ORBAT database schema ready.", flush=True)
+    except Exception as exc:
+        print(f"ORBAT database init failed (will retry on use): {exc}", flush=True)
+
+
 async def main() -> None:
     _require_env()
     token = scriptt.TOKEN
     if not token:
         raise SystemExit("DISCORD_TOKEN is empty. Check the value in Render Environment.")
 
+    # API first so Render health checks pass while the bot connects.
     await asyncio.gather(
-        scriptt.bot.start(token),
         _serve_api(),
+        scriptt.bot.start(token),
+        _init_db_background(),
     )
 
 

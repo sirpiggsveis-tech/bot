@@ -57,7 +57,7 @@ from orbat_db import (
 )
 
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
-init_orbat_db()
+# Schema init runs in run.py (background) so the web API can bind its port first.
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 GUILD_ID = os.getenv("GUILD_ID")

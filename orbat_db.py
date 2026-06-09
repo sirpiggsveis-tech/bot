@@ -99,6 +99,9 @@ def _database_url() -> str:
             "cannot run without it."
         )
     _validate_database_url(url)
+    if "connect_timeout" not in url:
+        sep = "&" if "?" in url else "?"
+        url = f"{url}{sep}connect_timeout=10"
     return url
 
 
@@ -111,7 +114,8 @@ def _get_pool() -> ConnectionPool:
                 _pool = ConnectionPool(
                     conninfo=_database_url(),
                     min_size=1,
-                    max_size=10,
+                    max_size=5,
+                    timeout=10,
                     kwargs={"row_factory": dict_row},
                     name="orbat",
                     open=True,

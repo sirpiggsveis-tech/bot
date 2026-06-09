@@ -5,7 +5,7 @@ services:
     name: orbat-bot
     runtime: python
     plan: free # sleeps when idle; fine for admin panel (wakes on first visit)
-    buildCommand: pip install -r requirements.txt && cd web/frontend && npm install && npm run build
+    buildCommand: pip install -r requirements.txt
     startCommand: python run.py
     healthCheckPath: /api/health
     autoDeploy: true
