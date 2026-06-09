@@ -1,12 +1,12 @@
-"""Control-panel API only — use this on Render (lightweight, no discord.py).
+"""Control-panel API only — lightweight Render entrypoint (no discord.py).
 
-Run the Discord bot separately on your PC:  python scriptt.py
-(or use start.bat)
+Run the Discord bot on your PC: python scriptt.py  or  start.bat
 """
 
 from __future__ import annotations
 
 import os
+import sys
 
 from dotenv import load_dotenv
 
@@ -17,29 +17,42 @@ from web.api.config import get_settings  # noqa: E402
 
 get_settings.cache_clear()
 
-_REQUIRED = ("DATABASE_URL", "SESSION_SECRET", "PANEL_ADMIN_PASSWORD", "GUILD_ID")
+_WARNED: list[str] = []
 
 
-def _require_env() -> None:
-    missing = [k for k in _REQUIRED if not os.getenv(k, "").strip()]
-    if missing:
-        raise SystemExit(
-            "Missing on Render:\n  - "
-            + "\n  - ".join(missing)
-            + "\n\nAdd them in Render -> Environment."
+def _warn_missing_env() -> list[str]:
+    global _WARNED
+    needed = ("DATABASE_URL", "SESSION_SECRET", "PANEL_ADMIN_PASSWORD", "GUILD_ID")
+    missing = [k for k in needed if not os.getenv(k, "").strip()]
+    if missing and missing != _WARNED:
+        print(
+            "WARNING: missing environment variables (login/DB may fail until set):\n  - "
+            + "\n  - ".join(missing),
+            flush=True,
         )
-    print("Panel API env OK (bot is not started by this process).", flush=True)
+        _WARNED = list(missing)
+    return missing
 
 
 def main() -> None:
     import uvicorn
 
-    _require_env()
+    _warn_missing_env()
     port = int(os.getenv("PORT", "8000"))
     app = create_app(bot=None)
-    print(f"Panel API on http://0.0.0.0:{port}/api/health", flush=True)
+
+    @app.on_event("startup")
+    async def _on_startup() -> None:
+        _warn_missing_env()
+        print(f"Panel API ready on port {port}", flush=True)
+
+    print(f"Starting panel API on 0.0.0.0:{port} …", flush=True)
     uvicorn.run(app, host="0.0.0.0", port=port, log_level="info", access_log=False)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as exc:
+        print(f"FATAL: {exc}", file=sys.stderr, flush=True)
+        raise

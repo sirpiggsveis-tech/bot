@@ -1,6 +1,20 @@
 import { FormEvent, useState } from "react";
-import { ApiError } from "../api";
+import { API_BASE, ApiError } from "../api";
 import { useAuth } from "../auth";
+
+async function wakeServer(): Promise<boolean> {
+  const deadline = Date.now() + 90_000;
+  while (Date.now() < deadline) {
+    try {
+      const r = await fetch(`${API_BASE}/api/health`, { cache: "no-store" });
+      if (r.ok) return true;
+    } catch {
+      /* retry */
+    }
+    await new Promise((r) => setTimeout(r, 3000));
+  }
+  return false;
+}
 
 export default function Login() {
   const { login } = useAuth();
@@ -8,12 +22,22 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
+    setStatus("Connecting to server…");
     try {
+      const up = await wakeServer();
+      if (!up) {
+        throw new ApiError(
+          0,
+          "Server did not respond in 90s. On free Render it may be down — try start-panel.bat on your PC and open http://localhost:8000/"
+        );
+      }
+      setStatus("Signing in…");
       await login(username.trim(), password);
     } catch (err) {
       setError(
@@ -21,6 +45,7 @@ export default function Login() {
       );
     } finally {
       setSubmitting(false);
+      setStatus(null);
     }
   }
 
@@ -79,7 +104,7 @@ export default function Login() {
             className="btn-primary w-full"
             disabled={submitting}
           >
-            {submitting ? "Signing in…" : "Sign in"}
+            {status || (submitting ? "Signing in…" : "Sign in")}
           </button>
         </form>
       </div>
