@@ -55,8 +55,19 @@ async def login(
 
     import json
 
-    body = json.dumps({"ok": True, "user": payload})
-    resp = Response(content=body, media_type="application/json")
+    content = json.dumps(
+        {
+            "ok": True,
+            "user": {
+                "id": payload["id"],
+                "username": payload["username"],
+                "avatar": payload["avatar"],
+                "tier": payload["tier"],
+            },
+            "token": session_token,
+        }
+    )
+    resp = Response(content=content, media_type="application/json")
     _set_session_cookie(resp, settings, session_token)
     return resp
 

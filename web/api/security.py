@@ -52,11 +52,18 @@ class CurrentUser:
         }
 
 
+def _session_token(request: Request, settings: Settings) -> str | None:
+    auth = request.headers.get("authorization", "")
+    if auth.lower().startswith("bearer "):
+        return auth[7:].strip() or None
+    return request.cookies.get(settings.cookie_name)
+
+
 def get_current_user(
     request: Request,
     settings: Settings = Depends(get_settings),
 ) -> CurrentUser:
-    token = request.cookies.get(settings.cookie_name)
+    token = _session_token(request, settings)
     if not token:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Not authenticated")
     data = read_session(settings, token)

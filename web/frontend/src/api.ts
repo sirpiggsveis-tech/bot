@@ -1,19 +1,26 @@
-function resolveApiBase(): string {
-  // On Cloudflare Pages, always use same-origin /api (proxied to Render in _redirects).
-  // This avoids broken login when VITE_API_BASE was set to the Render URL at build time.
-  if (typeof window !== "undefined" && window.location.hostname.endsWith(".pages.dev")) {
-    return "";
-  }
+const TOKEN_KEY = "orbat_panel_token";
+const DEFAULT_RENDER_API = "https://bot-wf8x.onrender.com";
 
+function resolveApiBase(): string {
   const raw = import.meta.env.VITE_API_BASE as string | undefined;
-  if (raw !== undefined && raw !== "") return raw.replace(/\/$/, "");
-  // Vite dev server (port 5173) calls the API on 8000; a built bundle served
-  // from the same server uses relative /api/... paths.
+  if (raw) return raw.replace(/\/$/, "");
   if (import.meta.env.DEV) return "http://localhost:8000";
-  return "";
+  return DEFAULT_RENDER_API;
 }
 
 export const API_BASE = resolveApiBase();
+
+export function getAuthToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function setAuthToken(token: string): void {
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
+export function clearAuthToken(): void {
+  localStorage.removeItem(TOKEN_KEY);
+}
 
 export class ApiError extends Error {
   status: number;
@@ -23,7 +30,16 @@ export class ApiError extends Error {
   }
 }
 
-const REQUEST_TIMEOUT_MS = 90_000;
+const REQUEST_TIMEOUT_MS = 60_000;
+
+function authHeaders(extra?: HeadersInit): HeadersInit {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  const token = getAuthToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return { ...headers, ...(extra as Record<string, string> | undefined) };
+}
 
 async function request<T>(
   path: string,
@@ -35,22 +51,18 @@ async function request<T>(
   let resp: Response;
   try {
     resp = await fetch(`${API_BASE}${path}`, {
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        ...(options.headers || {}),
-      },
-      signal: controller.signal,
       ...options,
+      headers: authHeaders(options.headers),
+      signal: controller.signal,
     });
   } catch (err) {
     if (err instanceof DOMException && err.name === "AbortError") {
       throw new ApiError(
         0,
-        "Server took too long to respond. On free hosting it may be waking up — wait a minute and try again, or open the Render URL directly."
+        "Server took too long to respond. Wait a minute and try again."
       );
     }
-    throw new ApiError(0, "Could not reach the server. Check your connection and try again.");
+    throw new ApiError(0, "Could not reach the server. Check your connection.");
   } finally {
     window.clearTimeout(timer);
   }
@@ -90,12 +102,11 @@ export interface Me {
   tier: "admin" | "staff" | "viewer";
 }
 
-interface LoginResponse {
+export interface LoginResponse {
   ok: boolean;
   user: Me;
+  token: string;
 }
-
-export type { LoginResponse };
 
 export interface Unit {
   id: number;

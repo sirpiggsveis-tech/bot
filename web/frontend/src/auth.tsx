@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { api, ApiError, LoginResponse, Me } from "./api";
+import { api, clearAuthToken, LoginResponse, Me, setAuthToken } from "./api";
 
 interface AuthState {
   user: Me | null;
@@ -38,12 +38,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       username,
       password,
     });
+    setAuthToken(result.token);
     setUser(result.user);
   }
 
   async function logout() {
-    await api.post("/api/auth/logout");
-    setUser(null);
+    try {
+      await api.post("/api/auth/logout");
+    } finally {
+      clearAuthToken();
+      setUser(null);
+    }
   }
 
   useEffect(() => {

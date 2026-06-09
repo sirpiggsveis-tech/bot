@@ -45,7 +45,7 @@ start "" "%SUPABASE%"
 
 echo.
 echo YOUR 3 CLICKS (details in DEPLOY_STEPS.txt):
-echo   1. Render: sign in, open orbat-bot, paste render-env-paste.txt, upgrade to Starter
+echo   1. Render: sign in, open orbat-bot, paste render-env-paste.txt, keep Free plan
 echo   2. Cloudflare Pages: connect GitHub repo, build web/frontend
 echo   3. Discord: add OAuth redirect https://bot-wf8x.onrender.com/api/auth/callback
 echo.
