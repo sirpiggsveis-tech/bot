@@ -1,0 +1,45 @@
+# Render blueprint: one web service running the Discord bot + control-panel API.
+# Docs: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: orbat-bot
+    runtime: python
+    plan: free # data lives in Supabase, so no persistent disk is required
+    buildCommand: pip install -r requirements.txt
+    startCommand: python run.py
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      # Set all of these as secrets in the Render dashboard (do not commit them):
+      - key: DATABASE_URL
+        sync: false
+      - key: DISCORD_TOKEN
+        sync: false
+      - key: GUILD_ID
+        sync: false
+      - key: DISCORD_CLIENT_ID
+        sync: false
+      - key: DISCORD_CLIENT_SECRET
+        sync: false
+      - key: OAUTH_REDIRECT_URI
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: POST_LOGIN_REDIRECT
+        sync: false
+      - key: SESSION_COOKIE_SAMESITE
+        value: none
+      - key: SESSION_COOKIE_SECURE
+        value: "1"
+      - key: PANEL_ADMIN_ROLE_IDS
+        sync: false
+      - key: PANEL_STAFF_ROLE_IDS
+        sync: false
+      - key: PANEL_VIEWER_ROLE_IDS
+        sync: false
+      - key: PANEL_ALLOW_USER_IDS
+        sync: false

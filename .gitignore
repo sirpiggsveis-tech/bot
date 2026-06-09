@@ -1,0 +1,15 @@
+.env
+.env.local
+pd_config.json
+autorole_config.json
+squad_config.json
+orbat.db
+__pycache__/
+*.pyc
+*.mp3
+.venv/
+venv/
+
+# Frontend
+web/frontend/node_modules/
+web/frontend/dist/
