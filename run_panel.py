@@ -36,10 +36,21 @@ def _warn_missing_env() -> list[str]:
     return missing
 
 
+def _init_db_schema() -> None:
+    try:
+        from orbat_db import init_orbat_db
+
+        init_orbat_db()
+        print("run_panel: database schema ready.", flush=True)
+    except Exception as exc:
+        print(f"run_panel: schema init warning: {exc}", flush=True)
+
+
 def main() -> None:
     import uvicorn
 
     _warn_missing_env()
+    _init_db_schema()
     port = int(os.getenv("PORT", "8000"))
     print(f"run_panel: binding 0.0.0.0:{port} (ping=/ping health=/api/health)", flush=True)
     app = create_app(bot=None)

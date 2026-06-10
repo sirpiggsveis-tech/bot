@@ -14,16 +14,28 @@ export function useGuild() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api
-      .get<GuildDirectory>("/api/guild/directory")
-      .then(setGuild)
-      .catch(() =>
-        api
-          .get<GuildDirectory>("/api/bot/guild")
-          .then(setGuild)
-          .catch(() => setGuild({ ...EMPTY, bot_offline: true }))
-      )
-      .finally(() => setLoading(false));
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const data = await api.get<GuildDirectory>("/api/guild/directory");
+        if (!cancelled) setGuild(data);
+      } catch {
+        try {
+          const data = await api.get<GuildDirectory>("/api/bot/guild");
+          if (!cancelled) setGuild(data);
+        } catch {
+          if (!cancelled) setGuild({ ...EMPTY, bot_offline: true, needs_sync: true });
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return { guild, loading };

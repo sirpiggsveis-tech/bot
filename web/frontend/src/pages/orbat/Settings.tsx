@@ -140,7 +140,7 @@ export default function Settings() {
           <label className="label">Embed footer</label>
           <input
             className="input"
-            defaultValue={settings.embed_footer ?? ""}
+            defaultValue={settings.embed_footer || ""}
             disabled={!isAdmin}
             onBlur={(e) =>
               isAdmin &&
@@ -208,11 +208,13 @@ export default function Settings() {
             <div className="font-medium">Show inactive members in panel</div>
           </div>
           <button
-            className={settings.show_inactive_in_panel ? "btn-primary" : "btn-secondary"}
+            className={settings.show_inactive_in_panel !== 0 ? "btn-primary" : "btn-secondary"}
             disabled={!isAdmin}
-            onClick={() => save({ show_inactive_in_panel: !settings.show_inactive_in_panel })}
+            onClick={() =>
+              save({ show_inactive_in_panel: settings.show_inactive_in_panel === 0 })
+            }
           >
-            {settings.show_inactive_in_panel ? "On" : "Off"}
+            {settings.show_inactive_in_panel !== 0 ? "On" : "Off"}
           </button>
         </div>
 
@@ -223,7 +225,7 @@ export default function Settings() {
           <select
             className="input w-36"
             disabled={!isAdmin}
-            value={settings.member_sort_mode ?? "rank"}
+            value={settings.member_sort_mode || "rank"}
             onChange={(e) => save({ member_sort_mode: e.target.value })}
           >
             <option value="rank">By rank</option>
@@ -237,11 +239,11 @@ export default function Settings() {
             <div className="font-medium">Show notes on ORBAT cards</div>
           </div>
           <button
-            className={settings.roster_show_notes ? "btn-primary" : "btn-secondary"}
+            className={settings.roster_show_notes !== 0 ? "btn-primary" : "btn-secondary"}
             disabled={!isAdmin}
-            onClick={() => save({ roster_show_notes: !settings.roster_show_notes })}
+            onClick={() => save({ roster_show_notes: settings.roster_show_notes === 0 })}
           >
-            {settings.roster_show_notes ? "On" : "Off"}
+            {settings.roster_show_notes !== 0 ? "On" : "Off"}
           </button>
         </div>
       </div>

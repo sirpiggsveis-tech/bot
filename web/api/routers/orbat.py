@@ -184,6 +184,9 @@ async def list_members(
     for m in members:
         m["roles"] = roles_map.get(m["discord_id"], [])
         m["role_ids"] = sorted(role_ids_map.get(m["discord_id"], set()))
+        m.setdefault("nickname", "")
+        m.setdefault("global_name", "")
+        m.setdefault("synced_at", None)
     return members
 
 

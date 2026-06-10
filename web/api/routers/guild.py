@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import asyncio
+import os
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
 import guild_cache_db
 
 from ..config import Settings, get_settings
+from ..discord_rest import fetch_guild_directory as live_guild_directory
 from ..security import CurrentUser, get_current_user, require_write
 
 router = APIRouter(prefix="/api/guild", tags=["guild"])
@@ -32,13 +34,48 @@ async def _run(func, *args, **kwargs):
         ) from exc
 
 
+def _empty_directory(sync: dict) -> dict:
+    return {
+        "text_channels": [],
+        "voice_channels": [],
+        "categories": [],
+        "roles": [],
+        "members": [],
+        "sync": sync,
+        "from_cache": True,
+        "needs_sync": True,
+    }
+
+
 @router.get("/directory")
 async def guild_directory(
     settings: Settings = Depends(get_settings),
     user: CurrentUser = Depends(get_current_user),
 ):
-    """Channels, roles, and members for panel dropdowns (from last /botpanel sync)."""
-    return await _run(guild_cache_db.get_guild_directory, _gid(settings))
+    """Channels, roles, and members for panel dropdowns."""
+    gid = _gid(settings)
+    sync_state = await _run(guild_cache_db.get_sync_state, gid)
+    try:
+        data = await _run(guild_cache_db.get_guild_directory, gid)
+    except HTTPException:
+        data = _empty_directory(sync_state)
+
+    has_data = bool(data.get("roles") or data.get("text_channels"))
+    if has_data:
+        data.setdefault("needs_sync", False)
+        return data
+
+    token = os.getenv("DISCORD_TOKEN", "").strip()
+    if token:
+        try:
+            live = await live_guild_directory(gid, token)
+            live["sync"] = data.get("sync") or await _run(guild_cache_db.get_sync_state, gid)
+            return live
+        except Exception as exc:
+            data["live_error"] = str(exc)
+
+    data["needs_sync"] = True
+    return data
 
 
 @router.get("/sync-status")

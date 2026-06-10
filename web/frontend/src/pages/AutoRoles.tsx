@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { api, AutoroleConfig, ReactionTrigger } from "../api";
 import { PageHeader, ErrorBanner } from "../components/ui";
 import BotBanner from "../components/BotBanner";
+import GuildDirectoryBanner from "../components/GuildDirectoryBanner";
 import { useGuild } from "../hooks/useGuild";
 
 export default function AutoRoles() {
@@ -80,6 +81,7 @@ export default function AutoRoles() {
     <div>
       <PageHeader title="Auto-roles" subtitle="/autoroleconfig — join, reaction, nickname" />
       <BotBanner />
+      <GuildDirectoryBanner guild={guild} />
       <ErrorBanner message={error} />
       {msg && (
         <div className="mb-4 rounded-md border border-panel-accent/40 bg-panel-accent/10 p-3 text-sm">

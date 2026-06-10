@@ -2,6 +2,7 @@ import { FormEvent, useState } from "react";
 import { api } from "../api";
 import { PageHeader, ErrorBanner } from "../components/ui";
 import BotBanner from "../components/BotBanner";
+import GuildDirectoryBanner from "../components/GuildDirectoryBanner";
 import { useGuild } from "../hooks/useGuild";
 
 export default function Messaging() {
@@ -63,6 +64,7 @@ export default function Messaging() {
     <div>
       <PageHeader title="Messaging" subtitle="/say · /order · /purge" />
       <BotBanner />
+      <GuildDirectoryBanner guild={guild} />
       <ErrorBanner message={error} />
       {msg && (
         <div className="mb-4 rounded-md border border-panel-accent/40 bg-panel-accent/10 p-3 text-sm">

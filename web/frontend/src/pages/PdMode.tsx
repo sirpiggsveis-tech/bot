@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { api, PdConfig } from "../api";
 import { PageHeader, ErrorBanner } from "../components/ui";
 import BotBanner from "../components/BotBanner";
+import GuildDirectoryBanner from "../components/GuildDirectoryBanner";
 import { useGuild } from "../hooks/useGuild";
 
 export default function PdMode() {
@@ -10,14 +11,14 @@ export default function PdMode() {
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [lockRole, setLockRole] = useState("");
-  const [channels, setChannels] = useState("");
+  const [channelIds, setChannelIds] = useState<number[]>([]);
 
   async function load() {
     try {
       const c = await api.get<PdConfig>("/api/bot/pd");
       setConfig(c);
       setLockRole(c.lock_role_id ? String(c.lock_role_id) : "");
-      setChannels(c.channel_ids.join(", "));
+      setChannelIds(c.channel_ids ?? []);
     } catch (e) {
       setError((e as Error).message);
     }
@@ -27,19 +28,20 @@ export default function PdMode() {
     load();
   }, []);
 
+  function toggleChannel(id: number) {
+    setChannelIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  }
+
   async function save(e: FormEvent) {
     e.preventDefault();
     setError(null);
     setMsg(null);
     try {
-      const channel_ids = channels
-        .split(/[,\s]+/)
-        .map((s) => s.trim())
-        .filter(Boolean)
-        .map(Number);
       await api.put("/api/bot/pd", {
         lock_role_id: lockRole ? Number(lockRole) : null,
-        channel_ids,
+        channel_ids: channelIds,
       });
       setMsg("PD config saved.");
       await load();
@@ -67,6 +69,7 @@ export default function PdMode() {
         subtitle="/pdconfig · /pdon · /pdoff · /pdconfigclear"
       />
       <BotBanner />
+      <GuildDirectoryBanner guild={guild} />
       <ErrorBanner message={error} />
       {msg && (
         <div className="mb-4 rounded-md border border-panel-accent/40 bg-panel-accent/10 p-3 text-sm">
@@ -96,30 +99,32 @@ export default function PdMode() {
           </select>
         </div>
         <div>
-          <label className="label">Channel IDs (comma-separated)</label>
-          <input
-            className="input"
-            value={channels}
-            onChange={(e) => setChannels(e.target.value)}
-            placeholder="123..., 456..."
-          />
-          <p className="mt-1 text-xs text-panel-muted">
-            Or pick from list:{" "}
-            {guild.text_channels.slice(0, 8).map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                className="mr-2 text-panel-accent hover:underline"
-                onClick={() =>
-                  setChannels((prev) =>
-                    prev ? `${prev}, ${c.id}` : c.id
-                  )
-                }
-              >
-                {c.name}
-              </button>
-            ))}
-          </p>
+          <label className="label">Channels to lock</label>
+          {guild.text_channels.length === 0 ? (
+            <p className="text-sm text-amber-300">No channels loaded — run /botpanel sync first.</p>
+          ) : (
+            <div className="flex max-h-48 flex-wrap gap-2 overflow-y-auto rounded border border-panel-border p-2">
+              {guild.text_channels.map((c) => {
+                const id = Number(c.id);
+                const on = channelIds.includes(id);
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    className={
+                      on
+                        ? "rounded-md bg-panel-accent/20 px-2 py-1 text-xs text-panel-accent"
+                        : "rounded-md bg-panel-bg px-2 py-1 text-xs text-panel-muted hover:text-white"
+                    }
+                    onClick={() => toggleChannel(id)}
+                  >
+                    {c.category ? `${c.category} / ` : ""}
+                    {c.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
         <button type="submit" className="btn-primary">
           Save config

@@ -223,6 +223,9 @@ export interface GuildDirectory {
   members: GuildMember[];
   sync?: GuildSyncState;
   from_cache?: boolean;
+  live?: boolean;
+  needs_sync?: boolean;
+  live_error?: string;
   bot_offline?: boolean;
   message?: string;
 }

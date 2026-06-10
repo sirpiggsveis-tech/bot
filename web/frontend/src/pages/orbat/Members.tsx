@@ -6,7 +6,7 @@ import { useGuild } from "../../hooks/useGuild";
 type FilterMode = "all" | "active" | "inactive";
 
 function displayName(m: Member) {
-  return m.nickname || m.global_name || m.username;
+  return m.nickname || m.global_name || m.username || String(m.discord_id);
 }
 
 export default function Members() {
@@ -162,8 +162,8 @@ export default function Members() {
                   </td>
                   <td className="px-4 py-2">
                     <div className="flex max-w-xs flex-wrap gap-1">
-                      {m.roles.length ? (
-                        m.roles.map((r) => (
+                      {(m.roles ?? []).length ? (
+                        (m.roles ?? []).map((r) => (
                           <span
                             key={r}
                             className="rounded bg-panel-bg px-1.5 py-0.5 text-xs text-panel-muted"

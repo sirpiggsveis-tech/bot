@@ -17,6 +17,9 @@ services:
         sync: false
       - key: GUILD_ID
         sync: false
+      # Optional: fills channel/role dropdowns before /botpanel sync (same token as bot)
+      - key: DISCORD_TOKEN
+        sync: false
       - key: SESSION_SECRET
         sync: false
       - key: PANEL_ADMIN_USERNAME

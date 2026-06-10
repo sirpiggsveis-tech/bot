@@ -275,7 +275,12 @@ def get_settings(guild_id: int) -> dict[str, Any]:
                     "member_sort_mode": "rank",
                     "roster_show_notes": 0,
                 }
-            return dict(row)
+            row = dict(row)
+            row.setdefault("embed_footer", "")
+            row.setdefault("show_inactive_in_panel", 1)
+            row.setdefault("member_sort_mode", "rank")
+            row.setdefault("roster_show_notes", 0)
+            return row
 
 
 def update_settings(guild_id: int, **fields: Any) -> None:
