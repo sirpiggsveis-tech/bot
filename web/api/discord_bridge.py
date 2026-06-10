@@ -19,7 +19,7 @@ def _bot(request: Request):
     if bot is None:
         raise HTTPException(
             status.HTTP_503_SERVICE_UNAVAILABLE,
-            "Discord bot is offline. Run start-bot.bat on your PC.",
+            "Discord bot is offline. Run start.bat or python scriptt.py on your PC.",
         )
     if not getattr(bot, "is_ready", lambda: False)():
         raise HTTPException(

@@ -1,5 +1,5 @@
 # Optional Render service: panel API only (FREE — sleeps when idle).
-# Your 24/7 Discord bot runs on Oracle Cloud / VPS — see HOSTING_24_7.txt
+# Your 24/7 Discord bot runs on Oracle Cloud / VPS — see deploy/install-oracle.sh
 # Paid all-in-one on Render instead: use render-starter.yaml
 services:
   - type: web

@@ -1,6 +1,6 @@
 """Control-panel API only — lightweight Render entrypoint (no discord.py).
 
-Run the Discord bot on your PC: python scriptt.py  or  start.bat
+Run the Discord bot on your PC: python scriptt.py or start.bat
 """
 
 from __future__ import annotations
