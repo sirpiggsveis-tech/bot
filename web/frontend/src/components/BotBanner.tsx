@@ -33,10 +33,9 @@ export default function BotBanner() {
 
   return (
     <div className="mb-4 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-200">
-      Your Discord bot runs on <strong>JustRunMy.App</strong>, not on Render — so it can be{" "}
-      <strong>green in Discord</strong> while this panel cannot run live actions (say, PD on/off,
-      squads, sync). Use <strong>slash commands in Discord</strong> for those. ORBAT and config
-      edits here still save to the database.
+      Live Discord actions (say, PD on/off, squads) need the bot on the same host as the API.
+      Use <strong>slash commands</strong> for those. ORBAT, members, and config save to the
+      database — run <strong>/botpanel sync</strong> in Discord to refresh channel/role dropdowns.
     </div>
   );
 }

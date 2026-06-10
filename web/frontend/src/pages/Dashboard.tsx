@@ -57,7 +57,8 @@ export default function Dashboard() {
     setSyncing(true);
     setError(null);
     try {
-      await api.post("/api/orbat/sync");
+      const r = await api.post<{ message?: string }>("/api/orbat/sync");
+      if (r.message) setError(null);
       await load();
     } catch (e) {
       setError((e as Error).message);

@@ -176,6 +176,25 @@ COMMAND_MAP: list[dict[str, object]] = [
         ],
     },
     {
+        "category": "Panel sync",
+        "commands": [
+            {
+                "name": "botpanel sync",
+                "usage": "/botpanel sync",
+                "summary": "Pull channels, roles, and all members into the panel database.",
+                "access": "Administrator",
+                "panel": "/orbat/settings",
+            },
+            {
+                "name": "orbatsync",
+                "usage": "/orbatsync",
+                "summary": "Same as /botpanel sync (full server snapshot).",
+                "access": "Administrator",
+                "panel": "/orbat/members",
+            },
+        ],
+    },
+    {
         "category": "Utility",
         "commands": [
             {

@@ -15,9 +15,14 @@ export function useGuild() {
 
   useEffect(() => {
     api
-      .get<GuildDirectory>("/api/bot/guild")
+      .get<GuildDirectory>("/api/guild/directory")
       .then(setGuild)
-      .catch(() => setGuild({ ...EMPTY, bot_offline: true }))
+      .catch(() =>
+        api
+          .get<GuildDirectory>("/api/bot/guild")
+          .then(setGuild)
+          .catch(() => setGuild({ ...EMPTY, bot_offline: true }))
+      )
       .finally(() => setLoading(false));
   }, []);
 

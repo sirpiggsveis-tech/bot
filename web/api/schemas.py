@@ -45,6 +45,9 @@ class MemberUpdate(BaseModel):
     position: str | None = None
     active: bool | None = None
     note: str | None = None
+    nickname: str | None = Field(default=None, max_length=32)
+    clear_nickname: bool = False
+    role_ids: list[int] | None = None
 
 
 class SettingsUpdate(BaseModel):
@@ -52,6 +55,10 @@ class SettingsUpdate(BaseModel):
     embed_color: int | None = Field(default=None, ge=0, le=0xFFFFFF)
     rank_source: str | None = Field(default=None, pattern="^(roles|manual)$")
     auto_sync: bool | None = None
+    embed_footer: str | None = Field(default=None, max_length=200)
+    show_inactive_in_panel: bool | None = None
+    member_sort_mode: str | None = Field(default=None, pattern="^(rank|name|join)$")
+    roster_show_notes: bool | None = None
 
 
 class LoginRequest(BaseModel):

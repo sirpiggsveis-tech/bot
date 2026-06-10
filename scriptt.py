@@ -39,12 +39,14 @@ from orbat_db import (
     get_unit,
     get_units,
     init_orbat_db,
+    mark_members_inactive_except,
     move_unit,
     remove_position,
     remove_rank,
     rename_unit,
     replace_member_roles,
     set_member_active,
+    set_member_nickname,
     set_member_note,
     set_member_position,
     set_member_rank,
@@ -235,9 +237,15 @@ AI_COMMAND_MAP: list[dict[str, object]] = [
                 "access": "Administrator",
             },
             {
+                "name": "botpanel sync",
+                "usage": "/botpanel sync",
+                "summary": "Full snapshot: channels, roles, and all members into the panel database.",
+                "access": "Administrator",
+            },
+            {
                 "name": "orbatsync",
                 "usage": "/orbatsync",
-                "summary": "Re-pull every member from Discord into the ORBAT.",
+                "summary": "Same as /botpanel sync (full server snapshot).",
                 "access": "Administrator",
             },
             {
@@ -422,6 +430,8 @@ async def sync_orbat_member(member: discord.Member) -> None:
         member.display_name,
         rank,
         member_orbat_join_date(member),
+        nickname=member.nick or "",
+        global_name=member.global_name or member.name,
     )
     await asyncio.to_thread(
         replace_member_roles,
@@ -454,6 +464,203 @@ async def force_sync_guild_orbat(guild: discord.Guild) -> int:
         await sync_orbat_member(member)
         synced += 1
     return synced
+
+
+async def sync_guild_full_snapshot(
+    guild: discord.Guild,
+    *,
+    synced_by: str = "bot",
+) -> dict[str, int]:
+    """Pull channels, roles, and every member from Discord into Supabase."""
+    import guild_cache_db
+
+    try:
+        await guild.chunk()
+    except Exception as exc:
+        print(f"Guild chunk during full sync: {exc}", flush=True)
+
+    channel_rows: list[dict] = []
+    for ch in guild.channels:
+        if isinstance(ch, discord.TextChannel):
+            channel_rows.append(
+                {
+                    "channel_id": ch.id,
+                    "name": ch.name,
+                    "channel_type": "text",
+                    "category_id": ch.category.id if ch.category else None,
+                    "category_name": ch.category.name if ch.category else "",
+                    "sort_position": ch.position,
+                }
+            )
+        elif isinstance(ch, discord.VoiceChannel):
+            channel_rows.append(
+                {
+                    "channel_id": ch.id,
+                    "name": ch.name,
+                    "channel_type": "voice",
+                    "category_id": ch.category.id if ch.category else None,
+                    "category_name": ch.category.name if ch.category else "",
+                    "sort_position": ch.position,
+                }
+            )
+        elif isinstance(ch, discord.CategoryChannel):
+            channel_rows.append(
+                {
+                    "channel_id": ch.id,
+                    "name": ch.name,
+                    "channel_type": "category",
+                    "category_id": None,
+                    "category_name": "",
+                    "sort_position": ch.position,
+                }
+            )
+
+    role_rows: list[dict] = []
+    for role in guild.roles:
+        if role.is_default():
+            continue
+        role_rows.append(
+            {
+                "role_id": role.id,
+                "name": role.name,
+                "color": role.color.value,
+                "sort_position": role.position,
+                "managed": role.managed,
+            }
+        )
+
+    await asyncio.to_thread(guild_cache_db.replace_guild_channels, guild.id, channel_rows)
+    await asyncio.to_thread(guild_cache_db.replace_guild_roles, guild.id, role_rows)
+
+    active_ids: set[int] = set()
+    member_count = 0
+    for member in guild.members:
+        if member.bot:
+            continue
+        await sync_orbat_member(member)
+        active_ids.add(member.id)
+        member_count += 1
+
+    marked_inactive = await asyncio.to_thread(
+        mark_members_inactive_except, guild.id, active_ids
+    )
+
+    await asyncio.to_thread(
+        guild_cache_db.set_sync_complete,
+        guild.id,
+        guild_name=guild.name,
+        member_count=member_count,
+        channel_count=len(channel_rows),
+        role_count=len(role_rows),
+        synced_by=synced_by,
+    )
+    print(
+        f"Full sync: {guild.name} — {member_count} members, "
+        f"{len(channel_rows)} channels, {len(role_rows)} roles",
+        flush=True,
+    )
+    return {
+        "members": member_count,
+        "channels": len(channel_rows),
+        "roles": len(role_rows),
+        "marked_inactive": marked_inactive,
+    }
+
+
+async def apply_member_roles_snapshot(
+    member: discord.Member,
+    role_ids: list[int],
+    *,
+    reason: str = "Panel role update",
+) -> None:
+    target = {int(rid) for rid in role_ids}
+    current = {
+        role.id
+        for role in member.roles
+        if not role.is_default() and not role.managed
+    }
+    guild = member.guild
+
+    for role_id in target - current:
+        role = guild.get_role(role_id)
+        if role is None:
+            continue
+        block = role_assign_block_reason(guild, role)
+        if block:
+            print(f"Skip add {role.name}: {block}", flush=True)
+            continue
+        try:
+            await member.add_roles(role, reason=reason)
+        except (discord.Forbidden, discord.HTTPException) as exc:
+            print(f"Failed adding {role.name}: {exc}", flush=True)
+
+    for role_id in current - target:
+        role = guild.get_role(role_id)
+        if role is None:
+            continue
+        block = role_assign_block_reason(guild, role)
+        if block:
+            print(f"Skip remove {role.name}: {block}", flush=True)
+            continue
+        try:
+            await member.remove_roles(role, reason=reason)
+        except (discord.Forbidden, discord.HTTPException) as exc:
+            print(f"Failed removing {role.name}: {exc}", flush=True)
+
+    await sync_orbat_member(member)
+
+
+async def process_pending_member_actions(guild: discord.Guild) -> int:
+    import guild_cache_db
+
+    actions = await asyncio.to_thread(guild_cache_db.fetch_pending_member_actions, guild.id)
+    processed = 0
+    for action in actions:
+        member = guild.get_member(action["discord_id"])
+        if member is None:
+            await asyncio.to_thread(
+                guild_cache_db.mark_member_action_processed, action["id"]
+            )
+            continue
+        payload = action.get("payload") or {}
+        try:
+            if action["action_type"] == "set_nickname":
+                nickname = truncate_nickname(str(payload.get("nickname", "")))
+                block = nickname_block_reason(member)
+                if block:
+                    print(f"Nickname action blocked for {member.id}: {block}", flush=True)
+                elif nickname:
+                    await member.edit(nick=nickname, reason="Panel nickname update")
+                else:
+                    await member.edit(nick=None, reason="Panel nickname clear")
+                await asyncio.to_thread(
+                    set_member_nickname, guild.id, member.id, nickname
+                )
+            elif action["action_type"] == "set_roles":
+                await apply_member_roles_snapshot(
+                    member, list(payload.get("role_ids", [])), reason="Panel role update"
+                )
+        except Exception as exc:
+            print(f"Member action {action['id']} failed: {exc}", flush=True)
+        await asyncio.to_thread(guild_cache_db.mark_member_action_processed, action["id"])
+        processed += 1
+    return processed
+
+
+async def _panel_background_loop() -> None:
+    import guild_cache_db
+
+    await bot.wait_until_ready()
+    while not bot.is_closed():
+        try:
+            for guild in bot.guilds:
+                pending = await asyncio.to_thread(guild_cache_db.get_sync_state, guild.id)
+                if pending.get("sync_requested_at"):
+                    await sync_guild_full_snapshot(guild, synced_by="panel")
+                await process_pending_member_actions(guild)
+        except Exception as exc:
+            print(f"Panel background loop error: {exc}", flush=True)
+        await asyncio.sleep(20)
 
 
 def member_rank_label(member: dict, ranks_by_name: dict[str, dict]) -> str:
@@ -1102,6 +1309,7 @@ async def on_ready():
         asyncio.create_task(recover_stale_pd_on_startup(guild))
         if intents.members:
             asyncio.create_task(_chunk_guild_safe(guild))
+    asyncio.create_task(_panel_background_loop())
 
 
 async def _chunk_guild_safe(guild: discord.Guild) -> None:
@@ -1110,7 +1318,11 @@ async def _chunk_guild_safe(guild: discord.Guild) -> None:
     except Exception as exc:
         print(f"Guild member chunk failed for {guild.name}: {exc}", flush=True)
     try:
-        await sync_guild_orbat(guild)
+        settings = await asyncio.to_thread(get_settings, guild.id)
+        if settings.get("auto_sync", 1):
+            await sync_guild_full_snapshot(guild, synced_by="startup")
+        else:
+            await sync_guild_orbat(guild)
     except Exception as exc:
         print(f"ORBAT sync failed for {guild.name}: {exc}", flush=True)
 
@@ -5440,6 +5652,33 @@ async def orbatmember(interaction: discord.Interaction, member: discord.Member):
     )
 
 
+botpanel_group = app_commands.Group(
+    name="botpanel",
+    description="Control-panel database sync",
+)
+
+
+@botpanel_group.command(
+    name="sync",
+    description="Pull all server channels, roles, and members into the panel database",
+)
+@admin_only()
+async def botpanel_sync(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    stats = await sync_guild_full_snapshot(interaction.guild, synced_by="discord")
+    await interaction.followup.send(
+        "Panel database updated:\n"
+        f"• **{stats['members']}** members\n"
+        f"• **{stats['channels']}** channels\n"
+        f"• **{stats['roles']}** roles\n"
+        f"• **{stats['marked_inactive']}** marked inactive (left server)",
+        ephemeral=True,
+    )
+
+
+bot.tree.add_command(botpanel_group)
+
+
 @bot.tree.command(
     name="orbatsync",
     description="Re-sync every member's ORBAT record from Discord",
@@ -5447,9 +5686,13 @@ async def orbatmember(interaction: discord.Interaction, member: discord.Member):
 @admin_only()
 async def orbatsync(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
-    count = await force_sync_guild_orbat(interaction.guild)
+    stats = await sync_guild_full_snapshot(interaction.guild, synced_by="discord")
     await interaction.followup.send(
-        f"Synced **{count}** member(s) from Discord.", ephemeral=True
+        "Synced from Discord:\n"
+        f"• **{stats['members']}** members\n"
+        f"• **{stats['channels']}** channels\n"
+        f"• **{stats['roles']}** roles",
+        ephemeral=True,
     )
 
 

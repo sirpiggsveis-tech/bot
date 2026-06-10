@@ -178,10 +178,12 @@ async def list_members(
     members = await _run(orbat_db.get_members, gid)
     ranks = await _run(orbat_db.get_ranks, gid)
     roles_map = await _run(orbat_db.get_member_roles_map, gid)
+    role_ids_map = await _run(orbat_db.get_member_role_ids_map, gid)
     rank_orders = {r["name"]: r["sort_order"] for r in ranks}
     members.sort(key=lambda m: _rank_sort_key(m, rank_orders))
     for m in members:
         m["roles"] = roles_map.get(m["discord_id"], [])
+        m["role_ids"] = sorted(role_ids_map.get(m["discord_id"], set()))
     return members
 
 
@@ -196,7 +198,9 @@ async def get_member(
     if member is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Member not tracked")
     roles_map = await _run(orbat_db.get_member_roles_map, gid)
+    role_ids_map = await _run(orbat_db.get_member_role_ids_map, gid)
     member["roles"] = roles_map.get(discord_id, [])
+    member["role_ids"] = sorted(role_ids_map.get(discord_id, set()))
     return member
 
 
@@ -226,7 +230,38 @@ async def update_member(
         await _run(orbat_db.set_member_active, gid, discord_id, body.active)
     if body.note is not None:
         await _run(orbat_db.set_member_note, gid, discord_id, body.note)
-    return {"ok": True}
+
+    import guild_cache_db
+
+    if body.clear_nickname:
+        await _run(orbat_db.set_member_nickname, gid, discord_id, "")
+        await _run(
+            guild_cache_db.enqueue_member_action,
+            gid,
+            discord_id,
+            "set_nickname",
+            {"nickname": ""},
+        )
+    elif body.nickname is not None:
+        await _run(orbat_db.set_member_nickname, gid, discord_id, body.nickname.strip())
+        await _run(
+            guild_cache_db.enqueue_member_action,
+            gid,
+            discord_id,
+            "set_nickname",
+            {"nickname": body.nickname.strip()},
+        )
+
+    if body.role_ids is not None:
+        await _run(
+            guild_cache_db.enqueue_member_action,
+            gid,
+            discord_id,
+            "set_roles",
+            {"role_ids": body.role_ids},
+        )
+
+    return {"ok": True, "queued_discord": body.nickname is not None or body.clear_nickname or body.role_ids is not None}
 
 
 # --------------------------------------------------------------------------
@@ -341,6 +376,14 @@ async def update_orbat_settings(
         fields["rank_source"] = body.rank_source
     if body.auto_sync is not None:
         fields["auto_sync"] = 1 if body.auto_sync else 0
+    if body.embed_footer is not None:
+        fields["embed_footer"] = body.embed_footer
+    if body.show_inactive_in_panel is not None:
+        fields["show_inactive_in_panel"] = 1 if body.show_inactive_in_panel else 0
+    if body.member_sort_mode is not None:
+        fields["member_sort_mode"] = body.member_sort_mode
+    if body.roster_show_notes is not None:
+        fields["roster_show_notes"] = 1 if body.roster_show_notes else 0
     if fields:
         await _run(orbat_db.update_settings, _gid(settings), **fields)
     return {"ok": True}
@@ -352,22 +395,28 @@ async def trigger_sync(
     settings: Settings = Depends(get_settings),
     user: CurrentUser = Depends(require_write),
 ):
-    """Force a re-pull of every member from Discord (needs the bot online)."""
+    """Queue a full guild sync (bot on JustRunMy.App picks it up within ~20s)."""
+    import guild_cache_db
+
+    gid = _gid(settings)
     bot = getattr(request.app.state, "bot", None)
-    if bot is None:
-        raise HTTPException(
-            status.HTTP_503_SERVICE_UNAVAILABLE, "Bot is not attached to this API"
-        )
-    guild = bot.get_guild(_gid(settings))
-    if guild is None:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Bot is not in the guild")
+    if bot is not None:
+        guild = bot.get_guild(gid)
+        if guild is not None:
+            syncer = getattr(bot, "sync_guild_full_snapshot", None)
+            if syncer is None:
+                import scriptt  # type: ignore
 
-    syncer = getattr(bot, "force_sync_guild_orbat", None)
-    if syncer is None:
-        # Imported lazily to avoid a hard dependency at module import time.
-        import scriptt  # type: ignore
+                stats = await scriptt.sync_guild_full_snapshot(guild, synced_by="panel")
+            else:
+                stats = await syncer(guild, synced_by="panel")
+            return {"ok": True, "immediate": True, **stats}
 
-        count = await scriptt.force_sync_guild_orbat(guild)
-    else:
-        count = await syncer(guild)
-    return {"synced": count}
+    await _run(guild_cache_db.request_sync, gid)
+    state = await _run(guild_cache_db.get_sync_state, gid)
+    return {
+        "ok": True,
+        "queued": True,
+        "message": "Sync queued. The bot applies it within ~20 seconds, or run /botpanel sync in Discord.",
+        "sync_requested_at": state.get("sync_requested_at"),
+    }

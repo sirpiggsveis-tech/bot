@@ -142,6 +142,8 @@ export interface Position {
 export interface Member {
   discord_id: number;
   username: string;
+  nickname: string;
+  global_name: string;
   rank: string;
   position: string;
   unit_id: number | null;
@@ -150,6 +152,8 @@ export interface Member {
   note: string;
   rank_locked: number;
   roles: string[];
+  role_ids: number[];
+  synced_at: string | null;
 }
 
 export interface OrbatSettings {
@@ -158,6 +162,21 @@ export interface OrbatSettings {
   title: string;
   rank_source: "roles" | "manual";
   auto_sync: number;
+  embed_footer: string;
+  show_inactive_in_panel: number;
+  member_sort_mode: "rank" | "name" | "join";
+  roster_show_notes: number;
+}
+
+export interface GuildSyncState {
+  guild_id: number;
+  last_sync_at: string | null;
+  last_sync_by: string;
+  sync_requested_at: string | null;
+  member_count: number;
+  channel_count: number;
+  role_count: number;
+  guild_name: string;
 }
 
 export interface Overview {
@@ -202,6 +221,8 @@ export interface GuildDirectory {
   categories: GuildChannel[];
   roles: GuildRole[];
   members: GuildMember[];
+  sync?: GuildSyncState;
+  from_cache?: boolean;
   bot_offline?: boolean;
   message?: string;
 }

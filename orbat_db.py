@@ -220,6 +220,13 @@ def init_orbat_db() -> None:
         "ALTER TABLE units ADD COLUMN IF NOT EXISTS leader_id BIGINT",
         "ALTER TABLE members ADD COLUMN IF NOT EXISTS note TEXT NOT NULL DEFAULT ''",
         "ALTER TABLE members ADD COLUMN IF NOT EXISTS rank_locked SMALLINT NOT NULL DEFAULT 0",
+        "ALTER TABLE members ADD COLUMN IF NOT EXISTS nickname TEXT NOT NULL DEFAULT ''",
+        "ALTER TABLE members ADD COLUMN IF NOT EXISTS global_name TEXT NOT NULL DEFAULT ''",
+        "ALTER TABLE members ADD COLUMN IF NOT EXISTS synced_at TEXT",
+        "ALTER TABLE settings ADD COLUMN IF NOT EXISTS embed_footer TEXT NOT NULL DEFAULT ''",
+        "ALTER TABLE settings ADD COLUMN IF NOT EXISTS show_inactive_in_panel SMALLINT NOT NULL DEFAULT 1",
+        "ALTER TABLE settings ADD COLUMN IF NOT EXISTS member_sort_mode TEXT NOT NULL DEFAULT 'rank'",
+        "ALTER TABLE settings ADD COLUMN IF NOT EXISTS roster_show_notes SMALLINT NOT NULL DEFAULT 0",
     ]
 
     with _get_pool().connection() as conn:
@@ -234,6 +241,13 @@ def init_orbat_db() -> None:
         bot_config_db.init_bot_config_db()
     except Exception as exc:
         logger.warning("bot_config schema init skipped: %s", exc)
+
+    try:
+        import guild_cache_db
+
+        guild_cache_db.init_guild_cache_db()
+    except Exception as exc:
+        logger.warning("guild_cache schema init skipped: %s", exc)
 
 
 # ---------------------------------------------------------------------------
@@ -256,12 +270,25 @@ def get_settings(guild_id: int) -> dict[str, Any]:
                     "title": "",
                     "rank_source": RANK_SOURCE_ROLES,
                     "auto_sync": 1,
+                    "embed_footer": "",
+                    "show_inactive_in_panel": 1,
+                    "member_sort_mode": "rank",
+                    "roster_show_notes": 0,
                 }
             return dict(row)
 
 
 def update_settings(guild_id: int, **fields: Any) -> None:
-    allowed = {"embed_color", "title", "rank_source", "auto_sync"}
+    allowed = {
+        "embed_color",
+        "title",
+        "rank_source",
+        "auto_sync",
+        "embed_footer",
+        "show_inactive_in_panel",
+        "member_sort_mode",
+        "roster_show_notes",
+    }
     updates = {k: v for k, v in fields.items() if k in allowed}
     if not updates:
         return
@@ -619,6 +646,9 @@ def sync_member(
     username: str,
     rank: str,
     join_date: str,
+    *,
+    nickname: str = "",
+    global_name: str = "",
 ) -> None:
     """Insert or refresh a member from a Discord sync.
 
@@ -626,6 +656,7 @@ def sync_member(
     it is not locked (locked = manually set by an admin). Unit, position, note
     are never touched here.
     """
+    synced_at = _utc_now_iso()
     with _get_pool().connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
@@ -639,27 +670,81 @@ def sync_member(
                     """
                     INSERT INTO members (
                         guild_id, discord_id, username, rank, position,
-                        unit_id, join_date, active, note, rank_locked
-                    ) VALUES (%s, %s, %s, %s, '', NULL, %s, 1, '', 0)
+                        unit_id, join_date, active, note, rank_locked,
+                        nickname, global_name, synced_at
+                    ) VALUES (%s, %s, %s, %s, '', NULL, %s, 1, '', 0, %s, %s, %s)
                     """,
-                    (guild_id, discord_id, username, rank, join_date),
+                    (
+                        guild_id,
+                        discord_id,
+                        username,
+                        rank,
+                        join_date,
+                        nickname,
+                        global_name,
+                        synced_at,
+                    ),
                 )
             elif existing["rank_locked"]:
                 cur.execute(
                     """
-                    UPDATE members SET username = %s, active = 1
+                    UPDATE members SET
+                        username = %s, nickname = %s, global_name = %s,
+                        active = 1, synced_at = %s
                     WHERE guild_id = %s AND discord_id = %s
                     """,
-                    (username, guild_id, discord_id),
+                    (username, nickname, global_name, synced_at, guild_id, discord_id),
                 )
             else:
                 cur.execute(
                     """
-                    UPDATE members SET username = %s, rank = %s, active = 1
+                    UPDATE members SET
+                        username = %s, rank = %s, nickname = %s, global_name = %s,
+                        active = 1, synced_at = %s
                     WHERE guild_id = %s AND discord_id = %s
                     """,
-                    (username, rank, guild_id, discord_id),
+                    (
+                        username,
+                        rank,
+                        nickname,
+                        global_name,
+                        synced_at,
+                        guild_id,
+                        discord_id,
+                    ),
                 )
+        conn.commit()
+
+
+def mark_members_inactive_except(guild_id: int, active_ids: set[int]) -> int:
+    """Mark members not in *active_ids* as inactive (after a full guild sync)."""
+    with _get_pool().connection() as conn:
+        with conn.cursor() as cur:
+            if active_ids:
+                cur.execute(
+                    """
+                    UPDATE members SET active = 0
+                    WHERE guild_id = %s AND NOT (discord_id = ANY(%s))
+                    """,
+                    (guild_id, list(active_ids)),
+                )
+            else:
+                cur.execute(
+                    "UPDATE members SET active = 0 WHERE guild_id = %s",
+                    (guild_id,),
+                )
+            count = cur.rowcount
+        conn.commit()
+        return count
+
+
+def set_member_nickname(guild_id: int, discord_id: int, nickname: str) -> None:
+    with _get_pool().connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE members SET nickname = %s WHERE guild_id = %s AND discord_id = %s",
+                (nickname, guild_id, discord_id),
+            )
         conn.commit()
 
 
@@ -738,7 +823,8 @@ def get_members(guild_id: int, *, active_only: bool = False) -> list[dict[str, A
         with conn.cursor() as cur:
             query = """
                 SELECT guild_id, discord_id, username, rank, position,
-                       unit_id, join_date, active, note, rank_locked
+                       unit_id, join_date, active, note, rank_locked,
+                       nickname, global_name, synced_at
                 FROM members
                 WHERE guild_id = %s
             """

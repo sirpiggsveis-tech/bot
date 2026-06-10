@@ -84,6 +84,18 @@ async def guild_meta(
         return await guild_directory(request, _gid(settings))
     except HTTPException as exc:
         if exc.status_code == status.HTTP_503_SERVICE_UNAVAILABLE:
+            import guild_cache_db
+
+            try:
+                cached = await _thread(
+                    guild_cache_db.get_guild_directory, _gid(settings)
+                )
+                if cached.get("text_channels") or cached.get("roles"):
+                    cached["bot_offline"] = True
+                    cached["message"] = exc.detail
+                    return cached
+            except Exception:
+                pass
             return {
                 "text_channels": [],
                 "voice_channels": [],
