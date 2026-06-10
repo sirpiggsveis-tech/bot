@@ -15,11 +15,13 @@ OPTION A — Free Discord bot host (recommended, $0, no card)
 -----------------------------------------------------------
 These are made for Discord bots. Sign up with email only.
 
-  1. Monkey Network     https://monkey-network.xyz/
-     - Python supported, 24/7, no card, SFTP upload
-     - Good for: scriptt.py bot only
+  If Monkey says "no slots" → try Daki or Wispbyte first (see BOT_HOST_DEPLOY.txt)
 
-  2. Kerit Cloud        https://kerit.cloud/free-discord-bot-hosting
+  1. Daki               https://daki.cc/          ← try first if Monkey full
+  2. Wispbyte           https://wispbyte.com/free-discord-bot-hosting
+  3. JustRunMy.App      https://justrunmy.app/discord-bots  (zip or GitHub)
+  4. Monkey Network     https://monkey-network.xyz/  (often no free slots)
+  5. Kerit Cloud        https://kerit.cloud/free-discord-bot-hosting
      - Free tier, no card, 24/7 claim
 
   3. Wispbyte           https://wispbyte.com/free-discord-bot-hosting

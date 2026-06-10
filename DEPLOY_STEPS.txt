@@ -2,8 +2,8 @@ ORBAT — quick deploy index
 ==========================
 
 NO CREDIT CARD (best for you right now):
-  1. Double-click  setup-free-bot-host.bat
-  2. Follow  HOSTING_NO_CARD.txt
+  1. Double-click  setup-bot-host.bat
+  2. Follow  BOT_HOST_DEPLOY.txt  (Daki / Wispbyte if Monkey full)
 
 24/7 VM (Oracle etc. — usually needs card to sign up):
   1. setup-oracle-server.bat  +  HOSTING_24_7.txt

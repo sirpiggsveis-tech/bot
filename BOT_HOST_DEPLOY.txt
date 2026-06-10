@@ -1,0 +1,69 @@
+Deploy bot when Monkey Network has NO SLOTS
+============================================
+
+Same files work on ANY Python bot host. Your pack is already built:
+  bot-deploy.zip
+  monkey-env-paste.txt   (env vars — use on any host)
+
+Try these IN ORDER (no credit card):
+
+────────────────────────────────────────────────────────────
+1. Daki (often has slots) — RECOMMENDED NOW
+────────────────────────────────────────────────────────────
+   https://daki.cc/
+   - Sign up → Free Discord bot hosting → Python
+   - Upload bot-deploy.zip → Extract
+   - Console: pip install -U pip && pip install -r requirements-bot.txt
+   - Variables: paste from monkey-env-paste.txt
+   - Start: python scriptt.py
+
+────────────────────────────────────────────────────────────
+2. Wispbyte
+────────────────────────────────────────────────────────────
+   https://wispbyte.com/free-discord-bot-hosting
+   - Same steps as Daki (zip + pip + env + python scriptt.py)
+
+────────────────────────────────────────────────────────────
+3. JustRunMy.App (zip OR connect GitHub)
+────────────────────────────────────────────────────────────
+   https://justrunmy.app/discord-bots
+   - Sign up free, no card
+   - Option A: Zip upload → bot-deploy.zip
+   - Option B: Connect GitHub repo sirpiggsveis-tech/bot
+       Start command: python scriptt.py
+       Install: pip install -r requirements-bot.txt
+       (Use repo root — scriptt.py is there)
+   - Add DISCORD_TOKEN, GUILD_ID, DATABASE_URL as env vars
+
+────────────────────────────────────────────────────────────
+4. Kerit Cloud
+────────────────────────────────────────────────────────────
+   https://kerit.cloud/free-discord-bot-hosting
+   - Free tier, no card — same zip deploy
+
+────────────────────────────────────────────────────────────
+5. Katabump (if everything else is full)
+────────────────────────────────────────────────────────────
+   - Free but click "Renew" once per week to stay online
+   - Same zip + env + python scriptt.py
+
+────────────────────────────────────────────────────────────
+Monkey Network — when slots are full
+────────────────────────────────────────────────────────────
+   - Check back later (free slots open when others delete servers)
+   - Their dashboard: daily rewards / spin wheel → tokens for extra slots
+   - Join their Discord (on monkey-network.xyz) for slot announcements
+
+────────────────────────────────────────────────────────────
+Every host — checklist
+────────────────────────────────────────────────────────────
+   [ ] stop start-bot.bat on your PC
+   [ ] upload & extract bot-deploy.zip
+   [ ] pip install -r requirements-bot.txt
+   [ ] set DISCORD_TOKEN, GUILD_ID, DATABASE_URL
+   [ ] startup: python scriptt.py
+   [ ] console shows logged in → green in Discord
+
+Panel (Cloudflare + Render) unchanged — ORBAT edits still sync via Supabase.
+
+Rebuild zip anytime:  setup-bot-host.bat

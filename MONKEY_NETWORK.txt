@@ -1,6 +1,9 @@
 Deploy ORBAT bot on Monkey Network (no credit card)
 ====================================================
 
+NO SERVER SLOTS? Monkey free tier fills up often.
+Use BOT_HOST_DEPLOY.txt — try Daki, Wispbyte, or JustRunMy.App (same zip).
+
 You keep:
   - Panel UI  → Cloudflare Pages (already working)
   - Panel API → Render free (orbat-bot.onrender.com)
