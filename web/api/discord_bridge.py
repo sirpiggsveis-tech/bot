@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
-import asyncio
 from typing import Any
 
-import discord
 from fastapi import HTTPException, Request, status
+
+
+def _discord():
+    """discord.py is only installed when the bot runs (run.py), not on panel-only Render."""
+    import discord
+
+    return discord
 
 
 def _bot(request: Request):
@@ -24,7 +29,7 @@ def _bot(request: Request):
     return bot
 
 
-def _guild(bot: Any, guild_id: int) -> discord.Guild:
+def _guild(bot: Any, guild_id: int) -> Any:
     guild = bot.get_guild(guild_id)
     if guild is None:
         raise HTTPException(
@@ -44,6 +49,7 @@ async def bot_status(request: Request) -> dict[str, Any]:
 
 
 async def guild_directory(request: Request, guild_id: int) -> dict[str, Any]:
+    discord = _discord()
     bot = _bot(request)
     guild = _guild(bot, guild_id)
 
@@ -83,6 +89,7 @@ async def guild_directory(request: Request, guild_id: int) -> dict[str, Any]:
 
 
 async def run_panel_action(request: Request, guild_id: int, coro):
+    discord = _discord()
     bot = _bot(request)
     guild = _guild(bot, guild_id)
     try:
@@ -98,7 +105,7 @@ async def run_panel_action(request: Request, guild_id: int, coro):
 async def pd_on(request: Request, guild_id: int) -> dict:
     import scriptt
 
-    async def _run(guild: discord.Guild):
+    async def _run(guild):
         locked, failed = await scriptt.lock_pd_channels(guild)
         return {"locked": locked, "failed": failed, "active": True}
 
@@ -108,7 +115,7 @@ async def pd_on(request: Request, guild_id: int) -> dict:
 async def pd_off(request: Request, guild_id: int) -> dict:
     import scriptt
 
-    async def _run(guild: discord.Guild):
+    async def _run(guild):
         saved, restore_context = scriptt.clear_pd_active_state(guild.id)
         unlocked, failed = await scriptt.restore_pd_permissions(guild, saved, restore_context)
         return {"unlocked": unlocked, "failed": failed, "active": False}
@@ -119,7 +126,7 @@ async def pd_off(request: Request, guild_id: int) -> dict:
 async def pd_clear(request: Request, guild_id: int) -> dict:
     import scriptt
 
-    async def _run(guild: discord.Guild):
+    async def _run(guild):
         guild_data = scriptt.get_guild_pd(guild.id)
         unlocked_note = []
         if guild_data.get("active") or guild_data.get("saved_permissions"):
