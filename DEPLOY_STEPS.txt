@@ -1,18 +1,15 @@
-ORBAT — quick deploy index
-==========================
-
-24/7 WITHOUT YOUR PC (recommended — FREE):
-  1. Double-click  setup-oracle-server.bat
-  2. Follow  HOSTING_24_7.txt  step by step
-
-24/7 ON RENDER (~$7/mo, easier, less steps):
-  1. Render -> orbat-bot -> Starter plan
-  2. Start: python run.py  |  Build: pip install -r requirements.txt
-  3. Set DISCORD_TOKEN + env vars -> Deploy
-  4. VITE_API_BASE=https://orbat-bot.onrender.com on Cloudflare Pages
-
-PANEL UI ONLY (Cloudflare Pages):
-  See HOSTING_24_7.txt STEP 5 and original Cloudflare steps in git history.
-
-PC local dev only:
-  start-bot.bat  or  start.bat
+ORBAT — quick deploy index
+==========================
+
+NO CREDIT CARD (best for you right now):
+  1. Double-click  setup-free-bot-host.bat
+  2. Follow  HOSTING_NO_CARD.txt
+
+24/7 VM (Oracle etc. — usually needs card to sign up):
+  1. setup-oracle-server.bat  +  HOSTING_24_7.txt
+
+24/7 ON RENDER (~$7/mo, needs card):
+  1. render-starter.yaml  +  DISCORD_TOKEN on Render
+
+PC local dev only:
+  start-bot.bat  or  start.bat
