@@ -1,0 +1,70 @@
+24/7 BOT — NO CREDIT CARD
+==========================
+
+Oracle and most cloud VMs ask for a card (even if free). These options do NOT.
+
+WHAT STILL WORKS WITHOUT A CARD
+-------------------------------
+  Cloudflare Pages  →  panel UI (you already have this)
+  Supabase          →  database (ORBAT + bot configs)
+  Render FREE       →  panel API (sleeps when idle; wakes when you open the site)
+
+  Discord bot 24/7  →  use a FREE BOT HOST below (no card)
+
+OPTION A — Free Discord bot host (recommended, $0, no card)
+-----------------------------------------------------------
+These are made for Discord bots. Sign up with email only.
+
+  1. Monkey Network     https://monkey-network.xyz/
+     - Python supported, 24/7, no card, SFTP upload
+     - Good for: scriptt.py bot only
+
+  2. Kerit Cloud        https://kerit.cloud/free-discord-bot-hosting
+     - Free tier, no card, 24/7 claim
+
+  3. Wispbyte           https://wispbyte.com/free-discord-bot-hosting
+     - No card, 24/7 free tier
+
+  4. JustRunMy.App      https://justrunmy.app/discord-bots
+     - Zip or Git deploy, no card on free tier
+
+  5. Katabump           (search "katabump discord hosting")
+     - Free but you click "renew" once per week to stay online
+
+SETUP ON ANY OF THESE (same idea):
+  1. On your PC run:   python scripts/build_bot_zip.py
+  2. Upload bot-deploy.zip via their file manager or SFTP
+  3. Set start command:   python scriptt.py
+  4. Add environment variables (from server.env / your .env):
+       DISCORD_TOKEN
+       GUILD_ID
+       DATABASE_URL
+  5. Start the server
+
+  Panel: keep using Cloudflare Pages + Render (orbat-bot.onrender.com).
+  Edit ORBAT in the panel; bot reads the same Supabase database.
+
+  Live actions in panel (say, PD on, squads) need bot + API in one process —
+  those only work on Render Starter ($7, needs card) or a VM with card.
+  Everything else (ORBAT, configs) works with split hosting.
+
+OPTION B — Render Starter when you have a card (~$7/mo)
+-------------------------------------------------------
+Easiest all-in-one: bot + API, panel actions work.
+See render-starter.yaml — rename to render.yaml, set DISCORD_TOKEN, deploy.
+
+OPTION C — Raspberry Pi (~$40 once, no subscription card)
+-----------------------------------------------------------
+Buy a Pi, install Ubuntu, use HOSTING_24_7.txt Docker steps at home.
+No cloud signup, no monthly fee. Uses home internet.
+
+OPTION D — Keep PC on temporarily
+---------------------------------
+start-bot.bat until you pick A, B, or C.
+
+TRADE-OFFS (be realistic)
+-------------------------
+Free bot hosts: limited RAM (often 256MB–2GB), ads, trust third parties,
+sometimes weekly renew (Katabump). Fine for one server bot; read their terms.
+
+Do NOT run the bot in two places (PC + host) at the same time.
