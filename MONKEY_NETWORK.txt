@@ -1,0 +1,127 @@
+Deploy ORBAT bot on Monkey Network (no credit card)
+====================================================
+
+You keep:
+  - Panel UI  → Cloudflare Pages (already working)
+  - Panel API → Render free (orbat-bot.onrender.com)
+  - Database  → Supabase
+
+Monkey Network runs ONLY the Discord bot 24/7.
+
+────────────────────────────────────────────────────────────
+STEP 0 — On your PC (one time)
+────────────────────────────────────────────────────────────
+Double-click:  setup-monkey-network.bat
+
+This creates:
+  bot-deploy.zip     → upload to Monkey
+  monkey-env-paste.txt → copy into their Environment / Variables UI
+
+Stop start-bot.bat on your PC before starting the cloud bot.
+
+────────────────────────────────────────────────────────────
+STEP 1 — Create account & server
+────────────────────────────────────────────────────────────
+1. https://monkey-network.xyz/  → Sign up (email, no card)
+2. Dashboard → Create server / New server
+3. Choose: Python (or "Discord bot" / Python egg if listed)
+4. Region: pick closest to you
+5. Create — wait until status is Running / Installing
+
+────────────────────────────────────────────────────────────
+STEP 2 — Upload bot files (File Manager OR SFTP)
+────────────────────────────────────────────────────────────
+Option A — File manager (easiest)
+  1. Open your server → Files
+  2. Delete default files if the panel says to (keep the folder empty)
+  3. Upload bot-deploy.zip
+  4. Extract / Unarchive the zip (right-click or Extract button)
+  5. You should see: scriptt.py, orbat_db.py, bot_config_db.py,
+     requirements-bot.txt, README-MONKEY.txt
+
+Option B — SFTP (from dashboard: SFTP details)
+  Host, port, username, password from the panel
+  Connect with FileZilla / WinSCP
+  Upload all files from bot-deploy.zip into /home/container/
+  (or the root folder shown in their file manager)
+
+────────────────────────────────────────────────────────────
+STEP 3 — Install Python packages
+────────────────────────────────────────────────────────────
+In the server panel look for: Startup, Install, or Console.
+
+Set INSTALL command (if the panel has a separate install field):
+  pip install -U pip && pip install -r requirements-bot.txt
+
+Or open Console / Terminal and run once:
+  pip install -U pip && pip install -r requirements-bot.txt
+
+Wait until it finishes (1–3 minutes).
+
+────────────────────────────────────────────────────────────
+STEP 4 — Environment variables
+────────────────────────────────────────────────────────────
+Server → Variables / Environment / .env
+
+Add each line from monkey-env-paste.txt (on your PC):
+
+  DISCORD_TOKEN=...
+  GUILD_ID=...
+  DATABASE_URL=...
+
+Do NOT commit these to GitHub. Paste only in Monkey's dashboard.
+
+────────────────────────────────────────────────────────────
+STEP 5 — Start command
+────────────────────────────────────────────────────────────
+Set STARTUP / Main command to:
+
+  python scriptt.py
+
+Or if the panel wants python3:
+
+  python3 scriptt.py
+
+Click Start / Restart server.
+
+────────────────────────────────────────────────────────────
+STEP 6 — Check logs
+────────────────────────────────────────────────────────────
+Console should show something like:
+  Logged in as YourBot#1234
+  ORBAT database schema ready.   (or similar on first run)
+
+Discord: bot should be ONLINE (green).
+
+Test in your server:  /help
+
+────────────────────────────────────────────────────────────
+STEP 7 — Panel still works
+────────────────────────────────────────────────────────────
+Open your Cloudflare Pages URL → sign in → edit ORBAT.
+
+Bot and panel share Supabase — changes sync automatically.
+
+Panel buttons that need live Discord (say, PD on, squads) may show
+"bot offline" on Render API — use slash commands in Discord instead,
+or upgrade to Render Starter later when you have a card.
+
+────────────────────────────────────────────────────────────
+TROUBLESHOOTING
+────────────────────────────────────────────────────────────
+Bot offline in Discord:
+  - Check Console for errors (bad token, missing DATABASE_URL)
+  - Restart server after fixing variables
+
+"Module not found":
+  - Run pip install -r requirements-bot.txt again in Console
+
+Two bots conflict:
+  - Only one DISCORD_TOKEN can run at a time
+  - Stop start-bot.bat on PC
+
+ffmpeg / TTS /order fails:
+  - Monkey may need an egg with ffmpeg; try /order in Discord after
+    install. imageio-ffmpeg often bundles ffmpeg on Linux.
+
+Support: Monkey Network Discord (link on their site).

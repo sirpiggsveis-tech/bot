@@ -37,14 +37,17 @@ def main() -> int:
             else:
                 print(f"skip missing: {name}")
 
-        readme = (
-            "ORBAT Discord bot — upload to free host\n"
-            "1. Unzip this folder\n"
-            "2. pip install -r requirements-bot.txt\n"
-            "3. Set env: DISCORD_TOKEN, GUILD_ID, DATABASE_URL\n"
-            "4. Start: python scriptt.py\n"
-        )
-        zf.writestr("README-DEPLOY.txt", readme)
+        readme = """ORBAT Discord bot — Monkey Network
+================================
+1. Unzip into server root (/home/container/)
+2. Console: pip install -U pip && pip install -r requirements-bot.txt
+3. Variables: DISCORD_TOKEN, GUILD_ID, DATABASE_URL
+4. Startup: python scriptt.py
+5. Start server — check console for "Logged in as"
+
+Full guide: MONKEY_NETWORK.txt in the GitHub repo.
+"""
+        zf.writestr("README-MONKEY.txt", readme)
 
     print(f"Wrote {OUT} ({OUT.stat().st_size // 1024} KB)")
     print("Upload to your free bot host, then set env vars and run: python scriptt.py")
